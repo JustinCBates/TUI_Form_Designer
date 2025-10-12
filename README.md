@@ -51,6 +51,8 @@ pip install tui-form-editor  # Includes tui-form-engine
 - **📊 Real-time Validation**: Input validation with immediate feedback
 - **🗂️ Output Mapping**: Transform responses to structured data
 - **🚀 Easy Integration**: Simple Python API for embedding in applications
+- **🎯 Rich UI Elements**: 7 step types including text, select, multiselect, confirm, password, info, and computed
+- **🔒 Advanced Input Handling**: Built-in validators, pattern matching, and custom error messages
 
 ## 🚀 Quick Start
 
@@ -223,6 +225,20 @@ tui-designer preview --flow my_form  # Preview specific form
   default: "Auto"
 ```
 
+### Multiple Selection
+```yaml
+- id: "features"
+  type: "multiselect"
+  message: "Select features to enable:"
+  choices:
+    - "Email notifications"
+    - "File attachments"
+    - "Advanced reporting"
+    - "API access"
+  defaults: ["Email notifications"]
+  instruction: "Use space to select, enter to confirm"
+```
+
 ### Confirmation
 ```yaml
 - id: "agree_terms"
@@ -239,6 +255,26 @@ tui-designer preview --flow my_form  # Preview specific form
   message: "Enter password:"
   validate: "password_length"
   instruction: "At least 8 characters"
+```
+
+### Information Display
+```yaml
+- id: "welcome"
+  type: "info"
+  title: "Welcome to Setup"
+  message: |
+    This wizard will guide you through configuration.
+    All settings can be changed later if needed.
+  instruction: "Press Enter to continue"
+```
+
+### Computed Values
+```yaml
+- id: "secret_key"
+  type: "computed"
+  compute: "discovered_data.environment.SECRET_KEY_BASE"
+  when: "secret_key_generation == false"
+  description: "Auto-generated from environment variables"
 ```
 
 ## 🔧 Advanced Features
@@ -265,14 +301,45 @@ Built-in validators for common patterns:
   type: "text"
   message: "Email address:"
   validate: "email"           # Built-in email validation
+  error_message: "Please enter a valid email address"
   
 - id: "port"
   type: "text" 
   message: "Port number:"
   validate: "integer"         # Must be a valid integer
+  
+- id: "project_name"
+  type: "text"
+  message: "Project name:"
+  validate: "required"        # Field cannot be empty
+  pattern: "^[a-zA-Z][a-zA-Z0-9_-]*$"
+  error_message: "Must start with letter, contain only letters, numbers, underscores, and hyphens"
 ```
 
-Available validators: `required`, `email`, `domain`, `integer`, `password_length`
+**Available validators:**
+- `required` - Field cannot be empty
+- `email` - Valid email address format
+- `domain` - Valid domain name format
+- `integer` - Must be a valid integer
+- `password_length` - Minimum password length (default 8 characters)
+
+### Advanced Choice Formats
+Enhanced choice definitions with labels and values:
+
+```yaml
+- id: "smtp_port"
+  type: "select"
+  message: "SMTP port:"
+  choices:
+    - name: "587 (STARTTLS - Recommended)"
+      value: "587"
+    - name: "465 (SSL/TLS)"
+      value: "465"
+    - name: "25 (Unencrypted - Not recommended)"
+      value: "25"
+  default: "587"
+  instruction: "Choose based on your email provider's settings"
+```
 
 ### Output Mapping
 Transform flat responses to structured data:
@@ -357,6 +424,166 @@ Automatically generate mock response templates:
 # This creates registration_mock_template.json
 tui-designer test
 # Select "Generate mock template" option
+```
+
+## 📋 Complete Step Type Reference
+
+### Step Type Properties
+
+All step types support these **common properties**:
+
+| Property | Required | Description | Example |
+|----------|----------|-------------|---------|
+| `id` | ✅ | Unique step identifier | `"username"` |
+| `type` | ✅ | Step type | `"text"`, `"select"`, etc. |
+| `condition` | ❌ | When to show this step | `"enable_email == true"` |
+| `instruction` | ❌ | Help text below question | `"Must be unique"` |
+
+### Text Input (`text`)
+
+**Required properties:** `id`, `type`, `message`
+
+```yaml
+- id: "project_name"
+  type: "text"
+  message: "Project name:"
+  default: "my-project"              # Default value
+  instruction: "Used for containers"  # Help text
+  validate: "required"               # Validation rule
+  pattern: "^[a-zA-Z][a-zA-Z0-9_-]*$"  # Regex pattern
+  error_message: "Invalid format"    # Custom error message
+  min_length: 3                      # Minimum length
+  max_length: 50                     # Maximum length
+```
+
+### Single Selection (`select`)
+
+**Required properties:** `id`, `type`, `message`, `choices`
+
+```yaml
+- id: "environment"
+  type: "select"
+  message: "Environment:"
+  choices:
+    - "Development"
+    - "Staging"
+    - "Production"
+  default: "Development"
+  instruction: "Choose deployment target"
+
+# Advanced format with labels and values
+- id: "database_port"
+  type: "select"
+  message: "Database port:"
+  choices:
+    - name: "5432 (PostgreSQL default)"
+      value: "5432"
+    - name: "3306 (MySQL default)"
+      value: "3306"
+  default: "5432"
+```
+
+### Multiple Selection (`multiselect`)
+
+**Required properties:** `id`, `type`, `message`, `choices`
+
+```yaml
+- id: "features"
+  type: "multiselect"
+  message: "Enable features:"
+  choices:
+    - "Email notifications"
+    - "File attachments"
+    - "API access"
+    - "Advanced reporting"
+  defaults: ["Email notifications"]   # Pre-selected items
+  instruction: "Space to select, Enter to confirm"
+  min_selections: 1                  # Minimum required
+  max_selections: 3                  # Maximum allowed
+```
+
+### Confirmation (`confirm`)
+
+**Required properties:** `id`, `type`, `message`
+
+```yaml
+- id: "enable_ssl"
+  type: "confirm"
+  message: "Enable SSL?"
+  default: true                      # Default choice
+  instruction: "Recommended for production"
+```
+
+### Password Input (`password`)
+
+**Required properties:** `id`, `type`, `message`
+
+```yaml
+- id: "admin_password"
+  type: "password"
+  message: "Admin password:"
+  validate: "password_length"        # Built-in validator
+  min_length: 8                      # Minimum length
+  instruction: "At least 8 characters"
+  confirm: true                      # Ask for confirmation
+```
+
+### Information Display (`info`)
+
+**Required properties:** `id`, `type`
+
+```yaml
+- id: "welcome_message"
+  type: "info"
+  title: "Welcome to Setup"          # Header title
+  message: |                         # Multi-line message
+    This wizard will configure your application.
+    
+    All settings can be changed later.
+  instruction: "Press Enter to continue"
+```
+
+### Computed Values (`computed`)
+
+**Required properties:** `id`, `type`, `compute`
+
+```yaml
+- id: "generated_secret"
+  type: "computed"
+  compute: "secrets.token_hex(32)"   # Python expression
+  when: "manual_secret == false"    # Condition for computation
+  description: "Auto-generated secret key"
+
+# Using discovered data
+- id: "detected_port"
+  type: "computed"
+  compute: "discovered_data.system.available_ports[0]"
+  fallback: "8080"                   # Default if computation fails
+```
+
+### Validation Rules
+
+| Validator | Description | Example |
+|-----------|-------------|---------|
+| `required` | Field cannot be empty | `validate: "required"` |
+| `email` | Valid email format | `validate: "email"` |
+| `domain` | Valid domain name | `validate: "domain"` |
+| `integer` | Must be integer | `validate: "integer"` |
+| `password_length` | Min 8 characters | `validate: "password_length"` |
+
+### Conditional Logic
+
+Show/hide steps based on previous answers:
+
+```yaml
+# Simple condition
+condition: "enable_email == true"
+
+# Complex conditions
+condition: "environment == 'Production' and ssl_enabled == true"
+
+# Multiple value check
+condition: "database_type in ['postgresql', 'mysql']"
 ```
 
 ## 🐍 Python Integration
@@ -488,6 +715,8 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 - **Language**: Python 3.8+
 - **Dependencies**: Questionary, PyYAML, Pydantic
+- **UI Elements**: 7 step types with advanced validation
+- **Validators**: 5 built-in validators + custom support
 - **Size**: Lightweight (~50KB)
 - **Type**: CLI Tool + Python Library
 - **Status**: Production Ready
