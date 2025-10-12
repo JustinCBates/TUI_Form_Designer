@@ -58,7 +58,11 @@ class FormRenderer:
             flow_def = self._load_flow_yaml(flow_path)
             flow_id = flow_def.get('metadata', {}).get('id', 'unnamed_flow')
             
+            # Pre-validate flow structure before showing progress
+            self._validate_flow_structure(flow_def)
+            
             if not quiet:
+                self.console.print(f"📁 Loading flow from: [cyan]{flow_path}[/cyan]")
                 self._show_flow_info(flow_def)
             
             # Execute the flow using the engine
@@ -123,6 +127,60 @@ class FormRenderer:
         
         return flow_data
     
+    def _validate_flow_structure(self, flow_def: Dict[str, Any]):
+        """Validate flow structure and provide clear error messages."""
+        errors = []
+        
+        # Check required top-level fields
+        if 'title' not in flow_def:
+            errors.append("Missing required field: 'title'")
+        
+        if 'steps' not in flow_def:
+            errors.append("Missing required field: 'steps'")
+        elif not isinstance(flow_def['steps'], list) or len(flow_def['steps']) == 0:
+            errors.append("'steps' must be a non-empty list")
+        else:
+            # Validate each step
+            step_ids = set()
+            for i, step in enumerate(flow_def['steps']):
+                if not isinstance(step, dict):
+                    errors.append(f"Step {i+1}: Must be a dictionary")
+                    continue
+                    
+                if 'id' not in step:
+                    errors.append(f"Step {i+1}: Missing required field 'id'")
+                elif step['id'] in step_ids:
+                    errors.append(f"Step {i+1}: Duplicate step ID '{step['id']}'")
+                else:
+                    step_ids.add(step['id'])
+                
+                if 'type' not in step:
+                    errors.append(f"Step {i+1} ({step.get('id', 'unnamed')}): Missing required field 'type'")
+                
+                # Validate choice fields
+                if step.get('type') == 'select':
+                    if 'choices' not in step:
+                        errors.append(f"Step {i+1} ({step.get('id', 'unnamed')}): Select type requires 'choices' field")
+                    elif step.get('default') is not None:
+                        choices = step.get('choices', [])
+                        default = step.get('default')
+                        # Check if default matches any choice (handle both string and dict formats)
+                        valid_choices = []
+                        for choice in choices:
+                            if isinstance(choice, str):
+                                valid_choices.append(choice)
+                            elif isinstance(choice, dict) and 'value' in choice:
+                                valid_choices.append(choice['value'])
+                            elif isinstance(choice, dict) and 'name' in choice:
+                                valid_choices.append(choice['name'])
+                        
+                        if default not in valid_choices:
+                            errors.append(f"Step {i+1} ({step.get('id', 'unnamed')}): Default value '{default}' not in choices {valid_choices}")
+        
+        if errors:
+            error_msg = "Flow validation failed:\n" + "\n".join(f"  ❌ {error}" for error in errors)
+            raise ValueError(error_msg)
+    
     def _show_welcome(self):
         """Show welcome message."""
         welcome_text = Text("🎯 Interactive Configuration", style="bold blue")
@@ -138,16 +196,25 @@ class FormRenderer:
         metadata = flow_def.get('metadata', {})
         steps = flow_def.get('steps', [])
         
-        info_text = Text()
-        info_text.append(f"📋 Flow: ", style="bold")
-        info_text.append(f"{metadata.get('title', 'Unnamed Flow')}\n", style="cyan")
+        # Extract title and icon from root level (flow engine structure)
+        title = flow_def.get('title', 'Unnamed Flow')
+        icon = flow_def.get('icon', '🔧')
+        description = flow_def.get('description', '')
         
-        if metadata.get('description'):
+        info_text = Text()
+        info_text.append(f"{icon} Flow: ", style="bold")
+        info_text.append(f"{title}\n", style="bold cyan")
+        
+        if description:
             info_text.append(f"📝 Description: ", style="bold")
-            info_text.append(f"{metadata['description']}\n", style="dim")
+            info_text.append(f"{description}\n", style="dim")
         
         info_text.append(f"📊 Steps: ", style="bold")
-        info_text.append(f"{len(steps)} configuration steps", style="green")
+        info_text.append(f"{len(steps)} configuration steps\n", style="green")
+        
+        if metadata.get('estimated_time'):
+            info_text.append(f"⏱️  Estimated time: ", style="bold")
+            info_text.append(f"{metadata['estimated_time']}", style="yellow")
         
         self.console.print(Panel(
             info_text,
