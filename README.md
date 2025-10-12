@@ -90,7 +90,7 @@ tui-designer demo
 from tui_form_designer import FlowEngine
 
 # Initialize the engine
-engine = FlowEngine(flows_dir="my_flows")
+engine = FlowEngine(flows_dir="my_tui_layouts")
 
 # Execute a form
 results = engine.execute_flow("user_registration")
@@ -383,7 +383,7 @@ engine = FlowEngine(style=custom_style)
 ## 📂 Project Structure
 
 ```
-flows/
+tui_layouts/
 ├── basic/              # Simple example flows
 │   ├── simple_survey.yml
 │   └── user_registration.yml
@@ -593,7 +593,7 @@ condition: "database_type in ['postgresql', 'mysql']"
 from tui_form_designer import FlowEngine
 
 def setup_application():
-    engine = FlowEngine(flows_dir="config_flows")
+    engine = FlowEngine(flows_dir="config_tui_layouts")
     config = engine.execute_flow("app_setup")
     
     # Use the configuration
