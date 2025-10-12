@@ -1,8 +1,39 @@
 # TUI Form Designer
 
-🎨 **Interactive form designer for Questionary-based terminal user interfaces**
+**Create beautiful, interactive command-line forms and configuration wizards using YAML flow definitions.**
 
-Create beautiful, interactive command-line forms and configuration wizards using YAML flow definitions instead of hardcoded Python prompts.
+## 📦 **Dual Package Architecture**
+
+TUI Form Designer is split into two packages for optimal deployment flexibility:
+
+### 🔧 **TUI Form Engine** (Production Runtime)
+- **Lightweight runtime** for executing flows in production
+- **Minimal dependencies** - only questionary, pyyaml, pydantic
+- **Fast startup** and **stable API**
+- **Perfect for production environments**
+
+```bash
+pip install tui-form-engine
+```
+
+### 🎨 **TUI Form Editor** (Development Tools)  
+- **Complete development toolkit** for creating and managing flows
+- **Interactive designer**, **testing framework**, **validation tools**
+- **CLI interface** with comprehensive commands
+- **Perfect for development environments**
+
+```bash
+pip install tui-form-editor  # Includes tui-form-engine
+```
+
+## 🎯 **When to Use Which Package**
+
+| Environment | Package | Use Case |
+|-------------|---------|----------|
+| **Production** | `tui-form-engine` | Running flows in deployed applications |
+| **Development** | `tui-form-editor` | Creating, testing, and managing flows |
+| **CI/CD** | `tui-form-editor` | Validation and testing in pipelines |
+| **Docker** | `tui-form-engine` | Minimal container size for runtime |
 
 [![Python](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
