@@ -1,0 +1,79 @@
+flow_id: "simple_survey"
+title: "User Satisfaction Survey"
+description: "A basic survey to gather user feedback and satisfaction ratings"
+icon: "📋"
+
+steps:
+  - id: "user_name"
+    type: "text"
+    message: "What's your name?"
+    validate: "required"
+    instruction: "This helps us personalize your experience"
+    
+  - id: "user_email"
+    type: "text"
+    message: "Email address (optional):"
+    validate: "email"
+    instruction: "We'll only use this for follow-up if needed"
+    
+  - id: "satisfaction_rating"
+    type: "select"
+    message: "How satisfied are you with our service?"
+    choices:
+      - "😍 Very Satisfied"
+      - "😊 Satisfied" 
+      - "😐 Neutral"
+      - "😞 Dissatisfied"
+      - "😡 Very Dissatisfied"
+    instruction: "Your honest feedback helps us improve"
+    
+  - id: "most_valuable_feature"
+    type: "select"
+    message: "What feature do you find most valuable?"
+    choices:
+      - "Easy to use interface"
+      - "Fast performance"
+      - "Comprehensive features"
+      - "Good documentation"
+      - "Reliable support"
+      - "Other"
+    
+  - id: "improvement_suggestion"
+    type: "text"
+    message: "What could we improve?"
+    instruction: "Any suggestions are welcome (optional)"
+    
+  - id: "recommend_to_others"
+    type: "confirm"
+    message: "Would you recommend our service to others?"
+    default: true
+    
+  - id: "contact_for_feedback"
+    type: "confirm"
+    message: "Can we contact you for additional feedback?"
+    default: false
+    condition: "user_email != ''"
+    instruction: "Only if you provided an email address"
+    
+  - id: "additional_comments"
+    type: "text"
+    message: "Any additional comments or suggestions?"
+    instruction: "Your thoughts help us serve you better (optional)"
+
+output_mapping:
+  respondent:
+    name: "user_name"
+    email: "user_email"
+    contact_ok: "contact_for_feedback"
+  feedback:
+    satisfaction: "satisfaction_rating"
+    valuable_feature: "most_valuable_feature"
+    improvements: "improvement_suggestion"
+    would_recommend: "recommend_to_others"
+    additional_comments: "additional_comments"
+
+validation_rules:
+  - field: "user_email"
+    rule: "email"
+    message: "Please enter a valid email address"
+    condition: "user_email != ''"

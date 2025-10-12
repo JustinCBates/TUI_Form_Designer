@@ -1,0 +1,184 @@
+flow_id: "application_setup"
+title: "Application Configuration Wizard"
+description: "Set up your application with database, email, and deployment settings"
+icon: "⚙️"
+
+steps:
+  - id: "app_name"
+    type: "text"
+    message: "Application name:"
+    validate: "required"
+    default: "MyApplication"
+    instruction: "Used in titles and branding"
+    
+  - id: "environment"
+    type: "select"
+    message: "Deployment environment:"
+    choices:
+      - "development"
+      - "staging"
+      - "production"
+    default: "development"
+    instruction: "Affects security and performance settings"
+    
+  - id: "debug_mode"
+    type: "confirm"
+    message: "Enable debug mode?"
+    default: true
+    condition: "environment == 'development'"
+    instruction: "Shows detailed error messages (development only)"
+    
+  - id: "database_type"
+    type: "select"
+    message: "Database type:"
+    choices:
+      - "PostgreSQL"
+      - "MySQL"
+      - "SQLite"
+      - "MongoDB"
+    default: "PostgreSQL"
+    instruction: "PostgreSQL recommended for production"
+    
+  - id: "database_host"
+    type: "text"
+    message: "Database host:"
+    default: "localhost"
+    condition: "database_type != 'SQLite'"
+    
+  - id: "database_port"
+    type: "text"
+    message: "Database port:"
+    default: "5432"
+    condition: "database_type == 'PostgreSQL'"
+    validate: "integer"
+    
+  - id: "database_port"
+    type: "text"
+    message: "Database port:"
+    default: "3306"
+    condition: "database_type == 'MySQL'"
+    validate: "integer"
+    
+  - id: "database_name"
+    type: "text"
+    message: "Database name:"
+    validate: "required"
+    condition: "database_type != 'SQLite'"
+    
+  - id: "database_username"
+    type: "text"
+    message: "Database username:"
+    condition: "database_type != 'SQLite'"
+    
+  - id: "database_password"
+    type: "password"
+    message: "Database password:"
+    condition: "database_type != 'SQLite'"
+    
+  - id: "redis_enabled"
+    type: "confirm"
+    message: "Enable Redis for caching?"
+    default: false
+    instruction: "Improves performance for high-traffic applications"
+    
+  - id: "redis_url"
+    type: "text"
+    message: "Redis URL:"
+    default: "redis://localhost:6379"
+    condition: "redis_enabled == true"
+    
+  - id: "email_enabled"
+    type: "confirm"
+    message: "Enable email notifications?"
+    default: true
+    instruction: "Required for user registration and notifications"
+    
+  - id: "smtp_host"
+    type: "text"
+    message: "SMTP host:"
+    default: "smtp.gmail.com"
+    condition: "email_enabled == true"
+    
+  - id: "smtp_port"
+    type: "text"
+    message: "SMTP port:"
+    default: "587"
+    condition: "email_enabled == true"
+    validate: "integer"
+    
+  - id: "smtp_username"
+    type: "text"
+    message: "SMTP username:"
+    condition: "email_enabled == true"
+    validate: "email"
+    
+  - id: "smtp_password"
+    type: "password"
+    message: "SMTP password:"
+    condition: "email_enabled == true"
+    
+  - id: "admin_email"
+    type: "text"
+    message: "Administrator email:"
+    validate: "email"
+    instruction: "Receives system notifications and alerts"
+    
+  - id: "secret_key"
+    type: "text"
+    message: "Application secret key:"
+    instruction: "Used for encryption (generate a random string)"
+    validate: "required"
+    
+  - id: "allowed_hosts"
+    type: "text"
+    message: "Allowed hosts (comma-separated):"
+    default: "localhost,127.0.0.1"
+    condition: "environment == 'production'"
+    instruction: "Domains that can access this application"
+    
+  - id: "ssl_enabled"
+    type: "confirm"
+    message: "Enable SSL/HTTPS?"
+    default: true
+    condition: "environment == 'production'"
+    instruction: "Required for production deployments"
+
+output_mapping:
+  application:
+    name: "app_name"
+    environment: "environment"
+    debug: "debug_mode"
+    secret_key: "secret_key"
+    allowed_hosts: "allowed_hosts"
+    ssl_enabled: "ssl_enabled"
+  database:
+    type: "database_type"
+    host: "database_host"
+    port: "database_port"
+    name: "database_name"
+    username: "database_username"
+    password: "database_password"
+  cache:
+    redis_enabled: "redis_enabled"
+    redis_url: "redis_url"
+  email:
+    enabled: "email_enabled"
+    smtp_host: "smtp_host"
+    smtp_port: "smtp_port"
+    smtp_username: "smtp_username"
+    smtp_password: "smtp_password"
+    admin_email: "admin_email"
+
+validation_rules:
+  - field: "app_name"
+    rule: "regex: ^[a-zA-Z0-9_-]+$"
+    message: "App name can only contain letters, numbers, underscores, and hyphens"
+  - field: "database_port"
+    rule: "integer"
+    message: "Port must be a valid number"
+  - field: "smtp_port"
+    rule: "integer"
+    message: "SMTP port must be a valid number"
+  - field: "secret_key"
+    rule: "length >= 32"
+    message: "Secret key must be at least 32 characters for security"

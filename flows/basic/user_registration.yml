@@ -1,0 +1,121 @@
+flow_id: "user_registration"
+title: "User Account Registration"
+description: "Create a new user account with personal information and preferences"
+icon: "👤"
+
+steps:
+  - id: "username"
+    type: "text"
+    message: "Choose a username:"
+    validate: "required"
+    instruction: "Must be unique and at least 3 characters long"
+    
+  - id: "email"
+    type: "text"
+    message: "Email address:"
+    validate: "email"
+    instruction: "We'll send a verification email to this address"
+    
+  - id: "password"
+    type: "password"
+    message: "Create a password:"
+    validate: "password_length"
+    instruction: "At least 8 characters for security"
+    
+  - id: "confirm_password"
+    type: "password"
+    message: "Confirm your password:"
+    instruction: "Must match the password above"
+    
+  - id: "full_name"
+    type: "text"
+    message: "Full name:"
+    validate: "required"
+    instruction: "Your real name for the profile"
+    
+  - id: "account_type"
+    type: "select"
+    message: "Select account type:"
+    choices:
+      - "Basic (Free)"
+      - "Premium ($9/month)"
+      - "Enterprise ($29/month)"
+    default: "Basic (Free)"
+    instruction: "You can upgrade later from your dashboard"
+    
+  - id: "interests"
+    type: "select"
+    message: "Primary area of interest:"
+    choices:
+      - "Web Development"
+      - "Mobile Apps"
+      - "Data Science"
+      - "DevOps"
+      - "UI/UX Design"
+      - "Project Management"
+      - "Other"
+    instruction: "Helps us customize your experience"
+    
+  - id: "experience_level"
+    type: "select"
+    message: "Experience level:"
+    choices:
+      - "Beginner (0-1 years)"
+      - "Intermediate (2-5 years)"
+      - "Advanced (5+ years)"
+      - "Expert (10+ years)"
+    
+  - id: "company_name"
+    type: "text"
+    message: "Company/Organization (optional):"
+    instruction: "Where do you work or study?"
+    
+  - id: "subscribe_newsletter"
+    type: "confirm"
+    message: "Subscribe to our newsletter?"
+    default: false
+    instruction: "Get updates about new features and tips"
+    
+  - id: "agree_to_terms"
+    type: "confirm"
+    message: "I agree to the Terms of Service and Privacy Policy"
+    default: false
+    instruction: "Required to create an account"
+    
+  - id: "marketing_emails"
+    type: "confirm"
+    message: "Receive promotional emails and special offers?"
+    default: false
+    condition: "subscribe_newsletter == true"
+    instruction: "Only if you subscribed to newsletter"
+
+output_mapping:
+  account:
+    username: "username"
+    email: "email"
+    password: "password"
+    full_name: "full_name"
+    account_type: "account_type"
+  profile:
+    interests: "interests"
+    experience_level: "experience_level"
+    company: "company_name"
+  preferences:
+    newsletter: "subscribe_newsletter"
+    marketing_emails: "marketing_emails"
+  legal:
+    terms_accepted: "agree_to_terms"
+
+validation_rules:
+  - field: "username"
+    rule: "length >= 3"
+    message: "Username must be at least 3 characters long"
+  - field: "password"
+    rule: "length >= 8"
+    message: "Password must be at least 8 characters long"
+  - field: "confirm_password"
+    rule: "equals password"
+    message: "Passwords do not match"
+  - field: "agree_to_terms"
+    rule: "equals true"
+    message: "You must agree to the terms to create an account"

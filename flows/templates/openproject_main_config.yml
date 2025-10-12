@@ -1,0 +1,239 @@
+flow_id: "openproject_main_config"
+title: "OpenProject Main Configuration"
+description: "Complete OpenProject deployment configuration including database, networking, features, and deployment settings"
+icon: "🔧"
+
+steps:
+  # Project Information
+  - id: "project_name"
+    type: "text"
+    message: "Project name:"
+    default: "openproject"
+    instruction: "Short name for your OpenProject instance (used in container names)"
+    
+  - id: "project_domain"
+    type: "text"
+    message: "Domain name:"
+    default: "openproject.local"
+    instruction: "The domain where OpenProject will be accessible"
+    
+  # Database Configuration
+  - id: "database_adapter"
+    type: "select"
+    message: "Database adapter:"
+    choices:
+      - "postgresql"
+      - "mysql"
+    default: "postgresql"
+    instruction: "PostgreSQL recommended for production environments"
+    
+  - id: "database_host"
+    type: "text"
+    message: "Database host:"
+    default: "db"
+    instruction: "Hostname of database server (use 'db' for containerized setup)"
+    
+  - id: "database_name"
+    type: "text"
+    message: "Database name:"
+    default: "openproject"
+    instruction: "Name of the OpenProject database"
+    
+  - id: "database_username"
+    type: "text"
+    message: "Database username:"
+    default: "openproject"
+    instruction: "Database user for OpenProject connections"
+    
+  - id: "database_password"
+    type: "password"
+    message: "Database password:"
+    default: "changeme"
+    instruction: "Strong password for database user (change from default!)"
+    
+  # Email Configuration
+  - id: "enable_email"
+    type: "confirm"
+    message: "Configure email notifications?"
+    default: false
+    instruction: "Enable SMTP for sending notifications and emails"
+    
+  - id: "smtp_host"
+    type: "text"
+    message: "SMTP host:"
+    default: "smtp.gmail.com"
+    instruction: "SMTP server hostname"
+    condition: "enable_email"
+    
+  - id: "smtp_port"
+    type: "text"
+    message: "SMTP port:"
+    default: "587"
+    instruction: "SMTP server port (587 for TLS, 465 for SSL)"
+    condition: "enable_email"
+    
+  - id: "smtp_username"
+    type: "text"
+    message: "SMTP username:"
+    instruction: "Email address or username for SMTP authentication"
+    condition: "enable_email"
+    
+  - id: "smtp_password"
+    type: "password"
+    message: "SMTP password:"
+    instruction: "Password for SMTP authentication"
+    condition: "enable_email"
+    
+  # Storage Configuration
+  - id: "storage_backend"
+    type: "select"
+    message: "File storage backend:"
+    choices:
+      - "local"
+      - "s3"
+      - "azure"
+    default: "local"
+    instruction: "Choose where to store uploaded files and attachments"
+    
+  - id: "storage_path"
+    type: "text"
+    message: "Local storage path:"
+    default: "./data/files"
+    instruction: "Local directory for file storage"
+    condition: "storage_backend == 'local'"
+    
+  - id: "s3_bucket"
+    type: "text"
+    message: "S3 bucket name:"
+    instruction: "AWS S3 bucket for file storage"
+    condition: "storage_backend == 's3'"
+    
+  - id: "s3_region"
+    type: "text"
+    message: "S3 region:"
+    default: "us-east-1"
+    instruction: "AWS region for S3 bucket"
+    condition: "storage_backend == 's3'"
+    
+  # Security & Authentication
+  - id: "enable_https"
+    type: "confirm"
+    message: "Enable HTTPS/SSL?"
+    default: true
+    instruction: "Recommended for production deployments"
+    
+  - id: "ssl_certificate_path"
+    type: "text"
+    message: "SSL certificate path:"
+    default: "/certs/cert.pem"
+    instruction: "Path to SSL certificate file"
+    condition: "enable_https"
+    
+  - id: "ssl_key_path"
+    type: "text"
+    message: "SSL private key path:"
+    default: "/certs/key.pem"
+    instruction: "Path to SSL private key file"
+    condition: "enable_https"
+    
+  - id: "enable_ldap"
+    type: "confirm"
+    message: "Configure LDAP authentication?"
+    default: false
+    instruction: "Integrate with existing LDAP/Active Directory"
+    
+  # Resource Limits
+  - id: "memory_limit"
+    type: "select"
+    message: "Memory limit for OpenProject container:"
+    choices:
+      - "2g"
+      - "4g"
+      - "8g"
+      - "16g"
+    default: "4g"
+    instruction: "RAM allocation for the main application container"
+    
+  - id: "cpu_limit"
+    type: "select"
+    message: "CPU limit for OpenProject container:"
+    choices:
+      - "1"
+      - "2"
+      - "4"
+      - "8"
+    default: "2"
+    instruction: "Number of CPU cores allocated to the container"
+    
+  # Features
+  - id: "enable_backup"
+    type: "confirm"
+    message: "Enable automated backups?"
+    default: true
+    instruction: "Configure daily database and file backups"
+    
+  - id: "backup_retention"
+    type: "select"
+    message: "Backup retention period:"
+    choices:
+      - "7 days"
+      - "30 days"
+      - "90 days"
+      - "1 year"
+    default: "30 days"
+    instruction: "How long to keep backup files"
+    condition: "enable_backup"
+    
+  - id: "enable_monitoring"
+    type: "confirm"
+    message: "Enable monitoring and metrics?"
+    default: false
+    instruction: "Add Prometheus metrics and health checks"
+
+output_mapping:
+  project:
+    name: "project_name"
+    domain: "project_domain"
+  database:
+    adapter: "database_adapter"
+    host: "database_host"
+    name: "database_name"
+    username: "database_username"
+    password: "database_password"
+  email:
+    enabled: "enable_email"
+    smtp:
+      host: "smtp_host"
+      port: "smtp_port"
+      username: "smtp_username"
+      password: "smtp_password"
+  storage:
+    backend: "storage_backend"
+    local_path: "storage_path"
+    s3:
+      bucket: "s3_bucket"
+      region: "s3_region"
+  security:
+    https_enabled: "enable_https"
+    ssl_cert: "ssl_certificate_path"
+    ssl_key: "ssl_key_path"
+    ldap_enabled: "enable_ldap"
+  resources:
+    memory_limit: "memory_limit"
+    cpu_limit: "cpu_limit"
+  features:
+    backup_enabled: "enable_backup"
+    backup_retention: "backup_retention"
+    monitoring_enabled: "enable_monitoring"
+
+validation_rules:
+  - field: "database_password"
+    rule: "length >= 8"
+    message: "Database password must be at least 8 characters"
+  - field: "project_domain"
+    rule: "regex: ^[a-zA-Z0-9.-]+$"
+    message: "Domain must contain only letters, numbers, dots, and hyphens"
+  - field: "smtp_port"
+    rule: "integer"
+    message: "SMTP port must be a number"
+    condition: "enable_email"

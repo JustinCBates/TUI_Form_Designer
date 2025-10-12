@@ -1,0 +1,184 @@
+flow_id: "docker_deployment"
+title: "Docker Deployment Configuration"
+description: "Configure Docker containers and deployment settings for your application"
+icon: "🐳"
+
+steps:
+  - id: "service_name"
+    type: "text"
+    message: "Service name:"
+    validate: "required"
+    default: "my-app"
+    instruction: "Used for container and service naming"
+    
+  - id: "container_image"
+    type: "text"
+    message: "Docker image:"
+    validate: "required"
+    default: "nginx:latest"
+    instruction: "Full image name including tag"
+    
+  - id: "replicas"
+    type: "select"
+    message: "Number of replicas:"
+    choices:
+      - "1"
+      - "2"
+      - "3"
+      - "5"
+      - "10"
+    default: "1"
+    instruction: "How many instances to run"
+    
+  - id: "cpu_limit"
+    type: "select"
+    message: "CPU limit:"
+    choices:
+      - "0.5"
+      - "1.0"
+      - "2.0"
+      - "4.0"
+    default: "1.0"
+    instruction: "CPU cores per container"
+    
+  - id: "memory_limit"
+    type: "select"
+    message: "Memory limit:"
+    choices:
+      - "512Mi"
+      - "1Gi"
+      - "2Gi"
+      - "4Gi"
+      - "8Gi"
+    default: "1Gi"
+    instruction: "RAM per container"
+    
+  - id: "port_mapping"
+    type: "text"
+    message: "Port mapping (host:container):"
+    default: "80:8080"
+    validate: "required"
+    instruction: "Format: external_port:internal_port"
+    
+  - id: "volume_mounts"
+    type: "confirm"
+    message: "Configure volume mounts?"
+    default: false
+    instruction: "For persistent data storage"
+    
+  - id: "host_path"
+    type: "text"
+    message: "Host path for volume:"
+    default: "/opt/data"
+    condition: "volume_mounts == true"
+    
+  - id: "container_path"
+    type: "text"
+    message: "Container path for volume:"
+    default: "/app/data"
+    condition: "volume_mounts == true"
+    
+  - id: "environment_vars"
+    type: "confirm"
+    message: "Add environment variables?"
+    default: false
+    instruction: "Configure runtime environment"
+    
+  - id: "env_production"
+    type: "confirm"
+    message: "Set ENVIRONMENT=production?"
+    default: true
+    condition: "environment_vars == true"
+    
+  - id: "database_url"
+    type: "text"
+    message: "Database URL environment variable:"
+    condition: "environment_vars == true"
+    instruction: "Full connection string (optional)"
+    
+  - id: "health_check"
+    type: "confirm"
+    message: "Enable health checks?"
+    default: true
+    instruction: "Monitor container health"
+    
+  - id: "health_check_path"
+    type: "text"
+    message: "Health check endpoint:"
+    default: "/health"
+    condition: "health_check == true"
+    instruction: "HTTP endpoint to check"
+    
+  - id: "restart_policy"
+    type: "select"
+    message: "Restart policy:"
+    choices:
+      - "always"
+      - "unless-stopped"
+      - "on-failure"
+      - "no"
+    default: "unless-stopped"
+    instruction: "When to restart containers"
+    
+  - id: "network_mode"
+    type: "select"
+    message: "Network mode:"
+    choices:
+      - "bridge"
+      - "host"
+      - "custom"
+    default: "bridge"
+    instruction: "Container networking configuration"
+    
+  - id: "custom_network"
+    type: "text"
+    message: "Custom network name:"
+    condition: "network_mode == 'custom'"
+    instruction: "Name of existing Docker network"
+    
+  - id: "logging_driver"
+    type: "select"
+    message: "Logging driver:"
+    choices:
+      - "json-file"
+      - "syslog"
+      - "none"
+    default: "json-file"
+    instruction: "How to handle container logs"
+
+output_mapping:
+  service:
+    name: "service_name"
+    image: "container_image"
+    replicas: "replicas"
+  resources:
+    cpu_limit: "cpu_limit"
+    memory_limit: "memory_limit"
+  networking:
+    port_mapping: "port_mapping"
+    network_mode: "network_mode"
+    custom_network: "custom_network"
+  storage:
+    volume_mounts_enabled: "volume_mounts"
+    host_path: "host_path"
+    container_path: "container_path"
+  environment:
+    variables_enabled: "environment_vars"
+    production_mode: "env_production"
+    database_url: "database_url"
+  monitoring:
+    health_check_enabled: "health_check"
+    health_check_path: "health_check_path"
+    restart_policy: "restart_policy"
+    logging_driver: "logging_driver"
+
+validation_rules:
+  - field: "service_name"
+    rule: "regex: ^[a-z0-9-]+$"
+    message: "Service name must be lowercase letters, numbers, and hyphens only"
+  - field: "port_mapping"
+    rule: "regex: ^[0-9]+:[0-9]+$"
+    message: "Port mapping must be in format 'host_port:container_port'"
+  - field: "replicas"
+    rule: "integer"
+    message: "Replicas must be a number"
