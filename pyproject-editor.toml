@@ -1,0 +1,85 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "tui-form-editor"
+dynamic = ["version"]
+description = "Development tools for creating and managing YAML flow definitions"
+readme = "README.md"
+license = "MIT"
+authors = [
+    {name = "OpenProject Team", email = "support@openproject.org"},
+]
+maintainers = [
+    {name = "Justin Bates", email = "justin@justinbates.dev"},
+]
+keywords = [
+    "questionary",
+    "interactive",
+    "cli",
+    "terminal",
+    "tui",
+    "forms",
+    "configuration",
+    "workflow",
+    "yaml",
+    "designer",
+    "editor",
+    "development"
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Software Development :: User Interfaces",
+    "Topic :: System :: Systems Administration",
+    "Topic :: Utilities",
+    "Environment :: Console",
+]
+requires-python = ">=3.8"
+dependencies = [
+    "tui-form-engine>=1.0.0",
+    "questionary>=2.0.0",
+    "pyyaml>=6.0",
+    "pydantic>=2.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "pytest-cov>=4.0",
+    "pytest-mock>=3.10",
+    "black>=23.0",
+    "isort>=5.0",
+    "mypy>=1.0",
+    "pre-commit>=3.0",
+]
+
+[project.scripts]
+tui-designer = "tui_form_editor.tools.cli:main"
+tui-validate = "tui_form_editor.tools.validator:main"
+tui-test = "tui_form_editor.tools.tester:main"
+tui-preview = "tui_form_editor.tools.preview:main"
+tui-demo = "tui_form_editor.tools.demo:main"
+
+[project.urls]
+Homepage = "https://github.com/JustinCBates/TUI_Form_Designer"
+Documentation = "https://github.com/JustinCBates/TUI_Form_Designer#readme"
+Repository = "https://github.com/JustinCBates/TUI_Form_Designer"
+Issues = "https://github.com/JustinCBates/TUI_Form_Designer/issues"
+Changelog = "https://github.com/JustinCBates/TUI_Form_Designer/releases"
+
+[tool.hatch.version]
+path = "src/tui_form_editor/__init__.py"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/tui_form_editor"]
