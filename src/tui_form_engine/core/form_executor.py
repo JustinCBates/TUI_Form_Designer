@@ -1,4 +1,4 @@
-"""Flow engine for executing YAML-defined flows using Questionary."""
+"""Form executor for executing YAML-defined forms using Questionary."""
 
 import questionary
 from questionary import Style
@@ -6,18 +6,18 @@ import yaml
 from typing import Dict, Any, Optional, List, Callable, Union
 from pathlib import Path
 import re
-from .exceptions import FlowValidationError, FlowExecutionError
+from .exceptions import FormValidationError, FormExecutionError
 
 
-class FlowEngine:
-    """Execute YAML-defined flows using Questionary."""
+class FormExecutor:
+    """Execute YAML-defined forms using Questionary."""
     
     def __init__(self, 
                  flows_dir: Optional[Union[str, Path]] = None,
                  style: Optional[Style] = None,
                  theme: str = "default"):
         """
-        Initialize FlowEngine.
+        Initialize FormExecutor.
         
         Args:
             flows_dir: Directory containing flow definition files
@@ -71,19 +71,25 @@ class FlowEngine:
     def execute_flow(self, 
                      flow_id: str, 
                      context: Optional[Dict[str, Any]] = None,
-                     mock_responses: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+                     mock_responses: Optional[Dict[str, Any]] = None,
+                     flow_data: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         """
-        Execute a flow by ID with optional context and mock responses.
+        Execute a flow by ID or with provided flow data.
         
         Args:
-            flow_id: ID of the flow to execute
+            flow_id: ID of the flow to execute (or just a name if flow_data is provided)
             context: Initial context variables
             mock_responses: Mock responses for testing (maps step_id -> response)
+            flow_data: Optional pre-loaded/preprocessed flow definition (bypasses file loading)
             
         Returns:
             Dictionary containing flow results
         """
-        flow_def = self._load_flow(flow_id)
+        # If flow_data is provided, use it directly (for preprocessed layouts)
+        if flow_data is not None:
+            flow_def = flow_data
+        else:
+            flow_def = self._load_flow(flow_id)
         context = context or {}
         mock_responses = mock_responses or {}
         
@@ -129,7 +135,7 @@ class FlowEngine:
                         questionary.print(f"   📋 {preview_text}", style="bold green")
                 except KeyboardInterrupt:
                     questionary.print("\\n❌ Flow execution cancelled by user.", style="bold red")
-                    raise FlowExecutionError("Flow execution cancelled by user")
+                    raise FormExecutionError("Flow execution cancelled by user")
         
         # Apply output mapping if specified
         if 'output_mapping' in flow_def:
@@ -315,13 +321,13 @@ class FlowEngine:
         """Load flow definition from YAML file."""
         flow_path = self.flows_dir / f"{flow_id}.yml"
         if not flow_path.exists():
-            raise FlowValidationError(f"Flow definition not found: {flow_path}")
+            raise FormValidationError(f"Flow definition not found: {flow_path}")
         
         try:
             with open(flow_path, 'r') as f:
                 flow_def = yaml.safe_load(f)
                 if not flow_def:
-                    raise FlowValidationError(f"Empty or invalid YAML in {flow_path}")
+                    raise FormValidationError(f"Empty or invalid YAML in {flow_path}")
                 
                 # Load and merge defaults if defaults_file is specified
                 if 'defaults_file' in flow_def:
@@ -329,7 +335,7 @@ class FlowEngine:
                 
                 return flow_def
         except yaml.YAMLError as e:
-            raise FlowValidationError(f"Invalid YAML in {flow_path}: {e}")
+            raise FormValidationError(f"Invalid YAML in {flow_path}: {e}")
     
     def _merge_defaults(self, flow_def: Dict[str, Any], flow_path: Path) -> Dict[str, Any]:
         """
