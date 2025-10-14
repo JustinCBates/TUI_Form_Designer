@@ -1,5 +1,19 @@
 # Conditional Handling Design for TUI Layouts
 
+## Implementation Status ⏸️ FUTURE WORK
+
+**Status**: Design document for future feature - NOT YET IMPLEMENTED  
+**Priority**: Medium  
+**Dependencies**: Virtual Layout System ✅ COMPLETE, Hierarchical Defaults ✅ COMPLETE  
+**Target Version**: 3.0.0
+
+This document describes a future enhancement to the TUI Form Engine that will enable conditional step execution based on runtime values, environment variables, and user inputs. The core preprocessing and layout systems are complete; conditional logic will be added as a Phase 2 feature when needed.
+
+**Current Implementation**: Steps execute sequentially without conditional logic  
+**Future Enhancement**: Steps can be skipped/shown based on conditions
+
+---
+
 ## Overview
 Design conditional step execution, branching logic, and dynamic configuration paths for TUI layouts to support environment-specific deployments and user-driven configuration scenarios.
 

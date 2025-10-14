@@ -184,7 +184,24 @@ class FlowEngine:
     def _build_question(self, step: Dict[str, Any], context: Dict[str, Any]):
         """Build a questionary question from step definition."""
         
-        if step['type'] == 'select':
+        if step['type'] == 'info':
+            # Info/message steps - just print and continue
+            title = step.get('title', '')
+            message = step.get('message', '')
+            instruction = step.get('instruction', 'Press Enter to continue')
+            
+            if title:
+                questionary.print(f"\n{title}", style="bold blue")
+            if message:
+                questionary.print(message, style="")
+            
+            return questionary.confirm(
+                instruction,
+                default=True,
+                style=self.style
+            )
+        
+        elif step['type'] == 'select':
             choices = []
             for choice in step['choices']:
                 if isinstance(choice, dict):
@@ -305,9 +322,63 @@ class FlowEngine:
                 flow_def = yaml.safe_load(f)
                 if not flow_def:
                     raise FlowValidationError(f"Empty or invalid YAML in {flow_path}")
+                
+                # Load and merge defaults if defaults_file is specified
+                if 'defaults_file' in flow_def:
+                    flow_def = self._merge_defaults(flow_def, flow_path)
+                
                 return flow_def
         except yaml.YAMLError as e:
             raise FlowValidationError(f"Invalid YAML in {flow_path}: {e}")
+    
+    def _merge_defaults(self, flow_def: Dict[str, Any], flow_path: Path) -> Dict[str, Any]:
+        """
+        Load defaults file and merge defaults into step definitions.
+        
+        Priority:
+        1. Hardcoded default in step (lowest priority - fallback)
+        2. Value from defaults_file (highest priority - intelligent defaults)
+        
+        Args:
+            flow_def: Flow definition with defaults_file field
+            flow_path: Path to the flow file (for resolving relative paths)
+            
+        Returns:
+            Flow definition with intelligent defaults merged into steps
+        """
+        defaults_file = flow_def.get('defaults_file')
+        if not defaults_file:
+            return flow_def
+        
+        # Resolve defaults file path (can be absolute or relative to flow file)
+        defaults_path = Path(defaults_file)
+        if not defaults_path.is_absolute():
+            defaults_path = flow_path.parent / defaults_file
+        
+        if not defaults_path.exists():
+            return flow_def
+        
+        try:
+            with open(defaults_path, 'r') as f:
+                defaults_data = yaml.safe_load(f)
+            
+            if not defaults_data or 'defaults' not in defaults_data:
+                return flow_def
+            
+            defaults = defaults_data['defaults']
+            
+            # Merge intelligent defaults into steps (overwrites hardcoded defaults)
+            for step in flow_def.get('steps', []):
+                step_id = step.get('id')
+                if step_id and step_id in defaults:
+                    # Intelligent defaults take priority over hardcoded defaults
+                    step['default'] = defaults[step_id]
+            
+            return flow_def
+            
+        except Exception as e:
+            # Silently fail - use hardcoded defaults if defaults file fails
+            return flow_def
     
     def _apply_output_mapping(self, answers: Dict[str, Any], mapping: Dict[str, Any]) -> Dict[str, Any]:
         """Apply output mapping to transform answers."""

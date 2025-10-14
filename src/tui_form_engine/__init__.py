@@ -14,10 +14,13 @@ __email__ = "support@openproject.org"
 from .core.flow_engine import FlowEngine
 from .ui.questionary_ui import QuestionaryUI
 from .core.exceptions import FlowValidationError, FlowExecutionError
+from .preprocessing import LayoutPreprocessor, DefaultsPreprocessor
 
 __all__ = [
     "FlowEngine",
     "QuestionaryUI", 
     "FlowValidationError",
     "FlowExecutionError",
+    "LayoutPreprocessor",
+    "DefaultsPreprocessor",
 ]
