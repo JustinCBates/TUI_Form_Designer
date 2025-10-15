@@ -137,12 +137,14 @@ class FlowEngine:
         
         return answers
     
-    def validate_flow(self, flow_definition: Dict[str, Any]) -> List[str]:
+    def validate_flow(self, flow_definition: Dict[str, Any], strict: bool = True) -> List[str]:
         """
         Validate flow definition and return list of errors.
         
         Args:
             flow_definition: Flow definition dictionary
+            strict: Enable production-ready validation (catches incomplete development)
+                   DEFAULT: True (no backward compatibility - forms must be production-ready)
             
         Returns:
             List of validation error messages (empty if valid)
@@ -150,7 +152,7 @@ class FlowEngine:
         errors = []
         
         # Required top-level fields
-        required_fields = ['flow_id', 'title', 'steps']
+        required_fields = ['layout_id', 'title', 'steps']
         for field in required_fields:
             if field not in flow_definition:
                 errors.append(f"Missing required field: {field}")
@@ -158,28 +160,141 @@ class FlowEngine:
         # Validate steps
         if 'steps' in flow_definition:
             step_ids = set()
+            subids = set()
             for i, step in enumerate(flow_definition['steps']):
-                # Check required step fields
-                if 'id' not in step:
-                    errors.append(f"Step {i}: Missing 'id' field")
-                elif step['id'] in step_ids:
-                    errors.append(f"Step {i}: Duplicate step ID '{step['id']}'")
+                # Check if this is a sublayout reference
+                is_sublayout = 'sublayout' in step
+                
+                if is_sublayout:
+                    # Sublayout validation
+                    if 'subid' not in step:
+                        errors.append(f"Step {i}: Sublayout missing 'subid' field")
+                    elif step['subid'] in subids:
+                        errors.append(f"Step {i}: Duplicate subid '{step['subid']}'")
+                    else:
+                        subids.add(step['subid'])
+                    
+                    if 'sublayout' not in step:
+                        errors.append(f"Step {i}: Missing 'sublayout' path")
                 else:
-                    step_ids.add(step['id'])
-                
-                if 'type' not in step:
-                    errors.append(f"Step {i}: Missing 'type' field")
-                elif step['type'] not in ['text', 'select', 'confirm', 'password', 'computed']:
-                    errors.append(f"Step {i}: Invalid step type '{step['type']}'")
-                
-                if 'message' not in step and step.get('type') != 'computed':
-                    errors.append(f"Step {i}: Missing 'message' field")
-                
-                # Validate select choices
-                if step.get('type') == 'select' and 'choices' not in step:
-                    errors.append(f"Step {i}: Select step missing 'choices' field")
+                    # Regular step validation
+                    if 'id' not in step:
+                        errors.append(f"Step {i}: Missing 'id' field")
+                    elif step['id'] in step_ids:
+                        errors.append(f"Step {i}: Duplicate step ID '{step['id']}'")
+                    else:
+                        step_ids.add(step['id'])
+                    
+                    if 'type' not in step:
+                        errors.append(f"Step {i}: Missing 'type' field")
+                    elif step['type'] not in ['text', 'select', 'multiselect', 'confirm', 'password', 'computed', 'info']:
+                        errors.append(f"Step {i}: Invalid step type '{step['type']}'")
+                    
+                    # Message required for most types (not computed or info)
+                    if 'message' not in step and step.get('type') not in ['computed', 'info']:
+                        errors.append(f"Step {i}: Missing 'message' field")
+                    
+                    # Validate select/multiselect choices
+                    if step.get('type') in ['select', 'multiselect'] and 'choices' not in step:
+                        errors.append(f"Step {i}: {step['type']} step missing 'choices' field")
+        
+        # Production-ready validation (strict mode - NOW DEFAULT)
+        if strict:
+            errors.extend(self._validate_production_ready(flow_definition))
         
         return errors
+    
+    def _validate_production_ready(self, flow_definition: Dict[str, Any]) -> List[str]:
+        """
+        Validate that flow is production-ready (no scaffolding placeholders).
+        
+        Detects incomplete development work like TODO comments, placeholder IDs,
+        and generic messages that indicate the form hasn't been customized.
+        
+        Args:
+            flow_definition: Flow definition dictionary
+            
+        Returns:
+            List of production-readiness warnings/errors
+        """
+        warnings = []
+        
+        # Check for TODO comments in the YAML (would need raw YAML for this)
+        # Note: This is checked in the validator tool when loading from file
+        
+        # Placeholder ID patterns
+        placeholder_patterns = [
+            'example_', 'test_', 'placeholder_', 'sample_', 
+            'demo_', 'temp_', 'mock_', 'dummy_'
+        ]
+        
+        # Generic messages that indicate incomplete customization
+        generic_messages = [
+            'Enter a value:', 
+            'Provide configuration input',
+            'Enter text here',
+            'Select an option',
+            'Choose a value',
+            'Input value',
+            'Type something'
+        ]
+        
+        # Generic instructions
+        generic_instructions = [
+            'Provide configuration input',
+            'Enter your input',
+            'Fill in this field'
+        ]
+        
+        # Check steps for placeholders
+        if 'steps' in flow_definition:
+            for i, step in enumerate(flow_definition['steps']):
+                step_id = step.get('id', '')
+                
+                # Check for placeholder IDs
+                for pattern in placeholder_patterns:
+                    if step_id.lower().startswith(pattern):
+                        warnings.append(
+                            f"Step {i} ({step_id}): Placeholder ID detected - "
+                            f"appears to be scaffolding that hasn't been customized"
+                        )
+                        break
+                
+                # Check for generic messages
+                message = step.get('message', '')
+                if message in generic_messages:
+                    warnings.append(
+                        f"Step {i} ({step_id}): Generic message '{message}' - "
+                        f"should be customized for production"
+                    )
+                
+                # Check for generic instructions
+                instruction = step.get('instruction', '')
+                if instruction in generic_instructions:
+                    warnings.append(
+                        f"Step {i} ({step_id}): Generic instruction '{instruction}' - "
+                        f"should be customized for production"
+                    )
+                
+                # Check for exact scaffolding template pattern
+                if (step_id == 'example_input' and 
+                    step.get('type') == 'text' and 
+                    message == 'Enter a value:' and 
+                    instruction == 'Provide configuration input'):
+                    warnings.append(
+                        f"Step {i}: Matches exact scaffolding template - "
+                        f"this step has not been customized at all!"
+                    )
+        
+        # Check for minimal step count (might indicate incomplete form)
+        if 'steps' in flow_definition and len(flow_definition['steps']) == 1:
+            step = flow_definition['steps'][0]
+            if any(step.get('id', '').startswith(p) for p in placeholder_patterns):
+                warnings.append(
+                    "Only 1 step with placeholder ID - form appears incomplete"
+                )
+        
+        return warnings
     
     def _build_question(self, step: Dict[str, Any], context: Dict[str, Any]):
         """Build a questionary question from step definition."""

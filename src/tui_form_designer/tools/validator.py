@@ -16,12 +16,21 @@ from ..ui.questionary_ui import QuestionaryUI
 
 
 class FlowValidator:
-    """Validate YAML flow definitions."""
+    """Validate flow definitions."""
     
-    def __init__(self, flows_dir: str = "flows"):
+    def __init__(self, flows_dir: str = "flows", strict: bool = True):
+        """
+        Initialize validator.
+        
+        Args:
+            flows_dir: Directory containing flow files
+            strict: Enable production-ready validation (catches incomplete development)
+                   DEFAULT: True (no backward compatibility)
+        """
         self.flows_dir = Path(flows_dir)
-        self.ui = QuestionaryUI()
         self.flow_engine = FlowEngine(flows_dir=flows_dir)
+        self.ui = QuestionaryUI()
+        self.strict = strict
     
     def validate_all_flows(self) -> bool:
         """Validate all flows in the flows directory."""
@@ -56,20 +65,51 @@ class FlowValidator:
         try:
             # Load YAML
             with open(flow_path, 'r') as f:
-                flow_def = yaml.safe_load(f)
+                flow_content = f.read()
+                flow_def = yaml.safe_load(flow_content)
             
             if not flow_def:
                 self.ui.show_error("Empty or invalid YAML file")
                 return False
             
+            # Detect if this is a sublayout (fragment) or standalone flow
+            is_sublayout = (
+                'sublayout' in str(flow_path) or
+                'subdefaults' in flow_content or
+                ('sublayout_defaults' in flow_def and 'layout_id' not in flow_def)
+            )
+            
+            # Check for TODO comments in raw YAML (strict mode)
+            if self.strict and 'TODO' in flow_content:
+                self.ui.show_warning("⚠️  TODO comments found in YAML - incomplete development")
+            
             # Validate using FlowEngine
-            errors = self.flow_engine.validate_flow(flow_def)
+            # Sublayouts don't need layout_id, so we validate differently
+            if is_sublayout:
+                errors = self._validate_sublayout(flow_def, flow_path)
+            else:
+                errors = self.flow_engine.validate_flow(flow_def, strict=self.strict)
+                
+                # Validate defaults file if specified
+                if 'defaults_file' in flow_def:
+                    defaults_errors = self._validate_defaults_file(flow_def['defaults_file'], flow_path)
+                    errors.extend(defaults_errors)
+                
+                # Validate referenced sublayouts
+                if 'steps' in flow_def:
+                    sublayout_errors = self._validate_sublayout_references(flow_def['steps'], flow_path)
+                    errors.extend(sublayout_errors)
             
             if not errors:
-                self.ui.show_success("✅ Valid")
+                layout_type = "sublayout" if is_sublayout else "flow"
+                if self.strict:
+                    self.ui.show_success(f"✅ Valid {layout_type} (production-ready)")
+                else:
+                    self.ui.show_success(f"✅ Valid {layout_type}")
                 return True
             else:
-                self.ui.show_error(f"❌ {len(errors)} validation errors:")
+                error_type = "errors/warnings" if self.strict else "validation errors"
+                self.ui.show_error(f"❌ {len(errors)} {error_type}:")
                 for error in errors:
                     self.ui.show_step(f"• {error}")
                 return False
@@ -80,6 +120,185 @@ class FlowValidator:
         except Exception as e:
             self.ui.show_error(f"Validation error: {e}")
             return False
+    
+    def _validate_sublayout(self, sublayout_def: Dict[str, Any], flow_path: Path = None) -> List[str]:
+        """
+        Validate a sublayout (fragment used in modular forms).
+        Sublayouts don't need layout_id but do need title and steps.
+        
+        Args:
+            sublayout_def: Sublayout definition dictionary
+            flow_path: Path to the sublayout file (for resolving relative paths)
+        """
+        errors = []
+        
+        # Required fields for sublayouts
+        if 'title' not in sublayout_def:
+            errors.append("Missing required field: title")
+        
+        if 'steps' not in sublayout_def:
+            errors.append("Missing required field: steps")
+        elif not isinstance(sublayout_def['steps'], list) or len(sublayout_def['steps']) == 0:
+            errors.append("'steps' must be a non-empty list")
+        else:
+            # Validate steps using same logic as FlowEngine
+            step_ids = set()
+            for i, step in enumerate(sublayout_def['steps']):
+                if 'id' not in step:
+                    errors.append(f"Step {i}: Missing 'id' field")
+                elif step['id'] in step_ids:
+                    errors.append(f"Step {i}: Duplicate step ID '{step['id']}'")
+                else:
+                    step_ids.add(step['id'])
+                
+                if 'type' not in step:
+                    errors.append(f"Step {i}: Missing 'type' field")
+                elif step['type'] not in ['text', 'select', 'multiselect', 'confirm', 'password', 'computed', 'info']:
+                    errors.append(f"Step {i}: Invalid step type '{step['type']}'")
+                
+                # Message required for most types (not computed or info)
+                if 'message' not in step and step.get('type') not in ['computed', 'info']:
+                    errors.append(f"Step {i}: Missing 'message' field")
+                
+                # Validate select/multiselect choices
+                if step.get('type') in ['select', 'multiselect'] and 'choices' not in step:
+                    errors.append(f"Step {i}: {step['type']} step missing 'choices' field")
+        
+        # Validate sublayout_defaults file if specified
+        if 'sublayout_defaults' in sublayout_def and flow_path:
+            defaults_errors = self._validate_defaults_file(sublayout_def['sublayout_defaults'], flow_path)
+            errors.extend(defaults_errors)
+        
+        # Production-ready validation (if strict mode)
+        if self.strict and 'steps' in sublayout_def:
+            errors.extend(self._validate_production_ready_steps(sublayout_def['steps']))
+        
+        return errors
+    
+    def _validate_production_ready_steps(self, steps: List[Dict[str, Any]]) -> List[str]:
+        """Check steps for production-readiness (placeholder patterns, etc.)."""
+        warnings = []
+        
+        placeholder_patterns = ['example_', 'test_', 'placeholder_', 'sample_', 'demo_', 'temp_', 'mock_', 'dummy_']
+        generic_messages = ['Enter a value:', 'Provide configuration input', 'Enter text here']
+        
+        placeholder_count = 0
+        for i, step in enumerate(steps):
+            step_id = step.get('id', f'step_{i}')
+            
+            # Check for placeholder IDs
+            if any(step_id.startswith(pattern) for pattern in placeholder_patterns):
+                warnings.append(f"Step {i} ({step_id}): Placeholder ID detected - not production-ready")
+                placeholder_count += 1
+            
+            # Check for generic messages
+            message = step.get('message', '')
+            if message in generic_messages:
+                warnings.append(f"Step {i} ({step_id}): Generic message '{message}' - needs customization")
+            
+            # Check for generic instructions
+            instruction = step.get('instruction', '')
+            if instruction in ['Provide configuration input', 'Enter your input']:
+                warnings.append(f"Step {i} ({step_id}): Generic instruction '{instruction}' - needs customization")
+        
+        # Check if form appears incomplete (minimal steps with placeholders)
+        if placeholder_count > 0 and len(steps) == 1:
+            warnings.append(f"Only {len(steps)} step with placeholder ID - form appears incomplete")
+        
+        return warnings
+    
+    def _validate_defaults_file(self, defaults_path: str, layout_path: Path) -> List[str]:
+        """
+        Validate that a defaults file exists and contains valid YAML.
+        
+        Args:
+            defaults_path: Path to defaults file (relative to layout file)
+            layout_path: Path to the layout file (for resolving relative paths)
+            
+        Returns:
+            List of validation errors
+        """
+        errors = []
+        
+        # Resolve relative path from layout file location
+        if layout_path:
+            base_dir = layout_path.parent
+            full_defaults_path = (base_dir / defaults_path).resolve()
+        else:
+            full_defaults_path = Path(defaults_path).resolve()
+        
+        # Check if file exists
+        if not full_defaults_path.exists():
+            errors.append(f"Defaults file not found: {defaults_path} (resolved to: {full_defaults_path})")
+            return errors
+        
+        # Validate YAML syntax
+        try:
+            with open(full_defaults_path, 'r') as f:
+                defaults_content = yaml.safe_load(f)
+                
+            if defaults_content is None:
+                errors.append(f"Defaults file is empty: {defaults_path}")
+            elif not isinstance(defaults_content, dict):
+                errors.append(f"Defaults file must contain a dictionary/mapping: {defaults_path}")
+                
+        except yaml.YAMLError as e:
+            errors.append(f"Invalid YAML in defaults file {defaults_path}: {e}")
+        except Exception as e:
+            errors.append(f"Error reading defaults file {defaults_path}: {e}")
+        
+        return errors
+    
+    def _validate_sublayout_references(self, steps: List[Dict[str, Any]], layout_path: Path) -> List[str]:
+        """
+        Validate sublayout references in steps.
+        
+        Args:
+            steps: List of step definitions
+            layout_path: Path to the parent layout file
+            
+        Returns:
+            List of validation errors
+        """
+        errors = []
+        base_dir = layout_path.parent if layout_path else Path.cwd()
+        
+        for i, step in enumerate(steps):
+            if 'sublayout' in step:
+                sublayout_path_str = step['sublayout']
+                sublayout_full_path = (base_dir / sublayout_path_str).resolve()
+                
+                # Check if sublayout file exists
+                if not sublayout_full_path.exists():
+                    errors.append(
+                        f"Step {i}: Sublayout file not found: {sublayout_path_str} "
+                        f"(resolved to: {sublayout_full_path})"
+                    )
+                    continue
+                
+                # Validate the sublayout file itself
+                try:
+                    with open(sublayout_full_path, 'r') as f:
+                        sublayout_content = f.read()
+                        sublayout_def = yaml.safe_load(sublayout_content)
+                    
+                    if not sublayout_def:
+                        errors.append(f"Step {i}: Sublayout file is empty: {sublayout_path_str}")
+                        continue
+                    
+                    # Recursively validate the sublayout
+                    sublayout_errors = self._validate_sublayout(sublayout_def, sublayout_full_path)
+                    
+                    # Prefix errors with sublayout reference
+                    for error in sublayout_errors:
+                        errors.append(f"Step {i} (sublayout {sublayout_path_str}): {error}")
+                    
+                except yaml.YAMLError as e:
+                    errors.append(f"Step {i}: Invalid YAML in sublayout {sublayout_path_str}: {e}")
+                except Exception as e:
+                    errors.append(f"Step {i}: Error reading sublayout {sublayout_path_str}: {e}")
+        
+        return errors
     
     def validate_specific_flows(self, flow_files: List[str]) -> bool:
         """Validate specific flow files."""
@@ -136,14 +355,69 @@ class FlowValidator:
 
 def main():
     """Main entry point for flow validation."""
-    parser = argparse.ArgumentParser(description="Validate YAML flow definitions")
+    parser = argparse.ArgumentParser(
+        description="Validate YAML flow definitions - STRICT MODE BY DEFAULT",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  # Production-ready validation (DEFAULT - strict mode enabled)
+  tui-designer validate
+  
+  # Validate specific files (strict by default)
+  tui-designer validate my_form.yml
+  
+  # Disable strict mode for development (NOT RECOMMENDED)
+  tui-designer validate --no-strict
+  
+  # Interactive mode
+  tui-designer validate --interactive
+
+Validation Modes:
+  STRICT (DEFAULT): Production-readiness checks including:
+  - Detection of TODO comments
+  - Placeholder ID patterns (example_*, test_*, etc.)
+  - Generic messages and instructions
+  - Scaffolding template patterns
+  
+  Use --no-strict only during active development.
+  Always use strict mode (default) before committing or deploying.
+        """
+    )
     parser.add_argument("flows", nargs="*", help="Specific flow files to validate")
     parser.add_argument("--flows-dir", default="flows", help="Directory containing flow files")
     parser.add_argument("--interactive", "-i", action="store_true", help="Interactive mode")
+    parser.add_argument(
+        "--strict", "-s", 
+        action="store_true",
+        default=True,
+        help="Enable strict production-ready validation (DEFAULT - always on unless --no-strict)"
+    )
+    parser.add_argument(
+        "--no-strict",
+        action="store_false",
+        dest="strict",
+        help="Disable strict mode (NOT RECOMMENDED - only for active development)"
+    )
+    parser.add_argument(
+        "--production", "-p",
+        action="store_true",
+        help="Alias for --strict (redundant since strict is now default)"
+    )
     
     args = parser.parse_args()
     
-    validator = FlowValidator(flows_dir=args.flows_dir)
+    # Strict mode is DEFAULT (args.strict defaults to True)
+    # Only disabled if --no-strict is explicitly provided
+    strict_mode = args.strict
+    
+    validator = FlowValidator(flows_dir=args.flows_dir, strict=strict_mode)
+    
+    if strict_mode:
+        print("🔒 STRICT MODE (default) - Production-ready validation enabled")
+        print("   Use --no-strict to disable (not recommended)")
+    else:
+        print("⚠️  DEVELOPMENT MODE - Strict validation disabled")
+        print("   This mode should only be used during active development")
     
     if args.interactive:
         validator.interactive_validate()

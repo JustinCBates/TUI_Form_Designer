@@ -106,7 +106,7 @@ results = engine.execute_flow("user_registration", mock_responses=mock_data)
 Create beautiful forms with simple YAML:
 
 ```yaml
-flow_id: "user_survey"
+layout_id: "user_survey"
 title: "User Satisfaction Survey"
 description: "Quick survey to gather user feedback"
 icon: "📋"

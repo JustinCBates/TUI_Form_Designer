@@ -68,7 +68,7 @@ choice = ui.select("Choose option:", ["A", "B", "C"])
 Create YAML files defining your interactive flows:
 
 ```yaml
-flow_id: user_registration
+layout_id: user_registration
 title: User Registration
 description: Collect user information
 steps:
