@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "tui-form-designer"
-dynamic = ["version"]
+version = "1.0.1"
 description = "Interactive form designer for Questionary-based terminal user interfaces"
 readme = "README.md"
 license = "MIT"
