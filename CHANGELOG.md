@@ -1,5 +1,25 @@
 # Changelog
 
+## [2.1.0] - 2025-10-19
+
+### Improved
+- **Type Hints**: Enhanced type annotations with proper `Callable` types
+- **Code Quality**: Comprehensive audit completed (see PHASE3_ANALYSIS.md)
+
+### Documentation
+- Added PHASE3_ANALYSIS.md with complete code quality assessment
+- Updated refactoring plan - all 3 phases now complete
+
+### Quality Assurance
+- Confirmed zero anti-patterns (no silent errors, no None returns)
+- Verified 93/93 tests passing
+- Coverage threshold enforced at 80% minimum
+
+### Notes
+- This is a polish release with no breaking changes
+- All functionality from v2.0.0 preserved
+- Excellent code quality confirmed through comprehensive audit
+
 ## [2.0.0] - 2025-10-19
 
 ### Breaking Changes
