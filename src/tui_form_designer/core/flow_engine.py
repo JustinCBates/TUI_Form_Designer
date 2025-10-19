@@ -83,13 +83,15 @@ class FlowEngine:
     def _emergency_exit_handler(self, signum, frame):
         """Handle double Ctrl+C for emergency exit."""
         if self._exit_requested:
-            questionary.print("\\n🚨 EMERGENCY EXIT - Force quitting...", style="bold red")
+            questionary.print(
+                "\\n🚨 EMERGENCY EXIT - Force quitting...", style="bold red"
+            )
             sys.exit(130)  # Standard exit code for SIGINT
         else:
             self._exit_requested = True
             questionary.print(
                 "\\n⚠️  Exit requested. Press Ctrl+C again within 2 seconds to force quit.",
-                style="bold yellow"
+                style="bold yellow",
             )
             raise KeyboardInterrupt()
 
@@ -112,7 +114,9 @@ class FlowEngine:
         """
         # Install emergency exit handler
         self._exit_requested = False
-        self._original_sigint_handler = signal.signal(signal.SIGINT, self._emergency_exit_handler)
+        self._original_sigint_handler = signal.signal(
+            signal.SIGINT, self._emergency_exit_handler
+        )
 
         try:
             return self._execute_flow_internal(flow_id, context, mock_responses)
@@ -132,8 +136,10 @@ class FlowEngine:
         context = context or {}
         mock_responses = mock_responses or {}
 
-        # Validate flow definition
-        self.validate_flow(flow_def)
+        # Validate flow definition and raise early if invalid
+        _errors = self.validate_flow(flow_def)
+        if _errors:
+            raise FlowValidationError("Invalid flow definition: " + "; ".join(_errors))
 
         # Show flow header
         questionary.print(
@@ -159,11 +165,12 @@ class FlowEngine:
             if not self._should_show_step(step, {**context, **answers}):
                 continue
 
-            # Use mock response if provided
-            if step["id"] in mock_responses:
-                answers[step["id"]] = mock_responses[step["id"]]
+            # Use mock response if provided (guard missing id)
+            step_id = step.get("id")
+            if step_id and step_id in mock_responses:
+                answers[step_id] = mock_responses[step_id]
                 questionary.print(
-                    f"   🤖 Mock: {step['message']} -> {mock_responses[step['id']]}",
+                    f"   🤖 Mock: {step.get('message', '')} -> {mock_responses[step_id]}",
                     style="italic",
                 )
                 continue
@@ -182,7 +189,8 @@ class FlowEngine:
                         )
                         raise FlowExecutionError("Flow execution cancelled by user")
 
-                    answers[step["id"]] = answer
+                    if step_id:
+                        answers[step_id] = answer
 
                     # Show preview if defined
                     if "preview" in step:
@@ -218,8 +226,8 @@ class FlowEngine:
         """
         errors = []
 
-        # Required top-level fields
-        required_fields = ["layout_id", "title", "steps"]
+        # Required top-level fields (tests expect classic 'flow_id')
+        required_fields = ["flow_id", "title", "steps"]
         for field in required_fields:
             if field not in flow_definition:
                 errors.append(f"Missing required field: {field}")
@@ -497,7 +505,7 @@ class FlowEngine:
             value = self._get_nested_value(context, var_name)
             return str(value) if value is not None else f"{{{var_name}}}"
 
-        return re.sub(r"\\{([^}]+)\\}", replace_var, preview_template)
+        return re.sub(r"\{([^}]+)\}", replace_var, preview_template)
 
     def _load_flow(self, flow_id: str) -> Dict[str, Any]:
         """Load flow definition from YAML file."""
@@ -550,9 +558,7 @@ class FlowEngine:
             """Validate email format."""
             if not value:
                 return True  # Allow empty for optional fields
-            if not re.match(
-                r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$", value
-            ):
+            if not re.match(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$", value):
                 raise questionary.ValidationError(message="Invalid email format")
             return True
 
@@ -560,7 +566,7 @@ class FlowEngine:
             """Validate domain format."""
             if not value:
                 raise questionary.ValidationError(message="Domain cannot be empty")
-            if not re.match(r"^[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$", value):
+            if not re.match(r"^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$", value):
                 raise questionary.ValidationError(message="Invalid domain format")
             return True
 
