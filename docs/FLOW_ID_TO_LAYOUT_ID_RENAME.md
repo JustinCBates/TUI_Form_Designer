@@ -353,6 +353,60 @@ All documentation now uses `layout_id`:
 - Control-flow scaffolder updated
 - No breaking issues found
 
+## 📝 **Lessons Learned**
+
+### ⚠️ **Demo Files Oversight**
+
+**Issue Discovered:** Demo files in `tui_layouts/` directory were initially missed during the refactor and still contained `flow_id` instead of `layout_id`.
+
+**Impact:** 
+- Demo commands failed to execute
+- New users couldn't test basic functionality
+- CLI tools couldn't discover available flows
+
+**Resolution:** 
+- Updated `tui_layouts/basic/simple_survey.yml`
+- Updated `tui_layouts/basic/user_registration.yml`
+- Added this documentation note for future refactors
+
+### 🔄 **Refactor Checklist for Future Changes**
+
+When performing field renames or structural changes, ensure ALL of the following are updated:
+
+**Core Components:**
+- [ ] Source code files
+- [ ] Validation logic
+- [ ] Error messages
+
+**Examples & Demos:**
+- [ ] Demo YAML files in `tui_layouts/`
+- [ ] Inline code examples in tools/demo.py
+- [ ] README.md examples
+- [ ] Documentation examples
+
+**External Projects:**
+- [ ] Config Manager layouts
+- [ ] Control-Flow scaffolder templates
+- [ ] Any dependent repositories
+
+**Testing & Validation:**
+- [ ] Unit tests
+- [ ] Integration tests
+- [ ] Demo functionality verification
+- [ ] CLI command verification
+
+**Documentation:**
+- [ ] README files
+- [ ] API documentation
+- [ ] Migration guides
+- [ ] Breaking change notifications
+
+**CRITICAL:** Demo files are often overlooked but are essential for:
+- First-time user experience
+- CLI tool functionality
+- Automated testing
+- Documentation examples
+
 ---
 
 **Version:** 2.1.0  
@@ -360,4 +414,4 @@ All documentation now uses `layout_id`:
 **Migration Required:** YES (simple find/replace)  
 **Rollback Available:** YES (not recommended)  
 
-**Last Updated:** October 15, 2025
+**Last Updated:** October 16, 2025

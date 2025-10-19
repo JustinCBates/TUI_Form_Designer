@@ -1,4 +1,4 @@
-flow_id: "user_registration"
+layout_id: "user_registration"
 title: "User Account Registration"
 description: "Create a new user account with personal information and preferences"
 icon: "👤"

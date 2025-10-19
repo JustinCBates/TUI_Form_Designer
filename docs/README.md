@@ -32,6 +32,12 @@ Quick references and field documentation:
 - **VALIDATOR_NO_BACKWARD_COMPATIBILITY.md** - Breaking changes documentation
 - **VALIDATOR_V2.2_ENHANCEMENTS.md** - Version 2.2 enhancement details
 
+### 🔧 **Development Guidelines**
+
+Guidelines for maintaining and extending the system:
+
+- **REFACTORING_GUIDELINES.md** - Comprehensive refactoring checklist and best practices
+
 ## 🎯 **Quick Start**
 
 ### For New Developers
@@ -51,6 +57,7 @@ Quick references and field documentation:
 1. Review implementation summaries for recent changes
 2. Check **VALIDATOR_OVERHAUL_SUMMARY.md** for current validation status
 3. Reference **TUI_VALIDATOR_COMPLETE_STATUS.md** for version history
+4. **Use REFACTORING_GUIDELINES.md for any structural changes**
 
 ## 📋 **Version Information**
 
@@ -73,15 +80,14 @@ Quick references and field documentation:
 
 ## 📝 **Maintenance**
 
-This documentation is actively maintained. When adding new features:
+This documentation is actively maintained. When adding new features or making changes:
 
 1. Create or update design spec in design specifications section
 2. Add implementation summary when feature is complete
 3. Update quick reference guides as needed
 4. Keep version information current
 5. Update this README when adding new document categories
+6. **For structural changes: Follow REFACTORING_GUIDELINES.md checklist**
 
----
-
-**Last Updated**: October 15, 2025  
+**Last Updated**: October 16, 2025  
 **Maintainer**: OpenProject Team
