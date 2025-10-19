@@ -27,11 +27,131 @@ When users press **Ctrl+C** during a `questionary` prompt:
 **File:** `src/tui_form_designer/core/flow_engine.py`  
 **Method:** `execute_flow()` around line 127
 
+# CRITICAL SIGNAL HANDLING ISSUE - AI DEVELOPER NOTIFICATION
+
+## ✅ RESOLVED: Silent KeyboardInterrupt Handling
+
+**Date Discovered:** October 16, 2025  
+**Discovered During:** WSL & Docker Desktop Manager implementation  
+**Severity:** CRITICAL - BLOCKS PRODUCTION USE  
+**Status:** ✅ **RESOLVED** - See Resolution Details Below  
+**Resolution Date:** January 19, 2025  
+**Resolution Branch:** `refactor`  
+
+---
+
+## Issue Summary
+
+**The TUI Form Designer had a critical flaw in signal handling that made it unsuitable for production applications with interactive loops.**
+
+### The Problem (RESOLVED)
+
+When users pressed **Ctrl+C** during a `questionary` prompt:
+
+1. ✅ The `KeyboardInterrupt` **WAS** caught by the TUI engine
+2. ❌ But instead of propagating the interrupt or raising `FlowExecutionError`, the engine **silently returned `None`**
+3. ❌ Consumer applications expecting exceptions for user cancellation **never received them**
+4. ❌ This created **infinite loops** where users could not exit applications
+
+### Original Code Location
+
+**File:** `src/tui_form_designer/core/flow_engine.py`  
+**Method:** `execute_flow()` around line 127
+
 ```python
 except KeyboardInterrupt:
     questionary.print("\\n❌ Flow execution cancelled by user.", style="bold red")
     raise FlowExecutionError("Flow execution cancelled by user")
 ```
+
+**The issue:** This code path **didn't always execute**. In many cases, the questionary library handled Ctrl+C internally and returned `None` without raising any exception.
+
+---
+
+## ✅ RESOLUTION IMPLEMENTED
+
+### Changes Made
+
+**Branch:** `refactor`  
+**Phase:** Phase 1 - Critical Safety Fix  
+
+#### 1. None-Return Detection (Primary Fix)
+Added explicit check for `None` returns from `question.ask()`:
+
+```python
+answer = question.ask()
+# Some prompt libraries can swallow Ctrl+C and return None
+# Treat None as user cancellation
+if answer is None:
+    questionary.print("\\n❌ Flow execution cancelled by user.", style="bold red")
+    raise FlowExecutionError("Flow execution cancelled by user")
+```
+
+**Location:** `src/tui_form_designer/core/flow_engine.py` line ~175
+
+#### 2. Emergency Exit Mechanism (Double Ctrl+C)
+Added signal handler for emergency force-quit:
+
+```python
+def _emergency_exit_handler(self, signum, frame):
+    """Handle double Ctrl+C for emergency exit."""
+    if self._exit_requested:
+        questionary.print("\\n🚨 EMERGENCY EXIT - Force quitting...", style="bold red")
+        sys.exit(130)  # Standard exit code for SIGINT
+    else:
+        self._exit_requested = True
+        questionary.print(
+            "\\n⚠️  Exit requested. Press Ctrl+C again within 2 seconds to force quit.",
+            style="bold yellow"
+        )
+        raise KeyboardInterrupt()
+```
+
+**Location:** `src/tui_form_designer/core/flow_engine.py` line ~87
+
+#### 3. Signal Handler Installation
+Wrapped flow execution with signal handler management:
+
+```python
+def execute_flow(self, flow_id, context=None, mock_responses=None):
+    # Install emergency exit handler
+    self._exit_requested = False
+    self._original_sigint_handler = signal.signal(signal.SIGINT, self._emergency_exit_handler)
+    
+    try:
+        return self._execute_flow_internal(flow_id, context, mock_responses)
+    finally:
+        # Restore original signal handler
+        if self._original_sigint_handler is not None:
+            signal.signal(signal.SIGINT, self._original_sigint_handler)
+```
+
+**Location:** `src/tui_form_designer/core/flow_engine.py` line ~96
+
+#### 4. Comprehensive Test Coverage
+Created test suite to verify all signal handling paths:
+
+**File:** `tests/test_signal_handling.py`
+
+- `test_execute_flow_treats_none_as_cancellation` - Verifies None returns raise FlowExecutionError
+- `test_execute_flow_keyboardinterrupt_raises` - Verifies KeyboardInterrupt is caught and converted
+
+**Test Status:** ✅ 2/2 PASSING
+
+---
+
+## Real-World Impact (ORIGINAL ISSUE)
+
+### WSL & Docker Desktop Manager Case Study
+
+**Application Pattern:**
+```python
+while True:
+    try:
+        results = engine.execute_flow("main_menu") 
+        choice = results.get('operation')
+        
+````
 
 **The issue:** This code path **doesn't always execute**. In many cases, the questionary library handles Ctrl+C internally and returns `None` without raising any exception.
 
