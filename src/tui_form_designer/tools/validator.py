@@ -63,8 +63,15 @@ class FlowValidator:
         self.ui.show_section_header(f"Validating: {flow_path.name}")
         
         try:
-            # Load YAML
-            with open(flow_path, 'r') as f:
+            # Validate encoding first
+            encoding_errors = self._validate_file_encoding(flow_path)
+            if encoding_errors:
+                for error in encoding_errors:
+                    self.ui.show_error(error)
+                return False
+            
+            # Load YAML with explicit UTF-8 encoding
+            with open(flow_path, 'r', encoding='utf-8') as f:
                 flow_content = f.read()
                 flow_def = yaml.safe_load(flow_content)
             
@@ -120,6 +127,63 @@ class FlowValidator:
         except Exception as e:
             self.ui.show_error(f"Validation error: {e}")
             return False
+    
+    def _validate_file_encoding(self, file_path: Path) -> List[str]:
+        """
+        Validate file encoding and detect problematic Unicode characters.
+        
+        Args:
+            file_path: Path to the file to validate
+            
+        Returns:
+            List of encoding-related error messages
+        """
+        errors = []
+        
+        try:
+            # Try to read file without encoding specified (system default)
+            with open(file_path, 'r') as f:
+                content = f.read()
+        except UnicodeDecodeError as e:
+            errors.append(f"🔧 ENCODING ERROR: {e}")
+            errors.append("💡 Fix: Convert file to UTF-8 encoding or replace problematic Unicode characters")
+            
+            # Try to read with UTF-8 to identify specific issues
+            try:
+                with open(file_path, 'r', encoding='utf-8', errors='replace') as f:
+                    utf8_content = f.read()
+                    
+                # Check for common problematic characters
+                problematic_chars = {
+                    ''': "smart quote (U+2018) - replace with regular apostrophe '",
+                    ''': "smart quote (U+2019) - replace with regular apostrophe '", 
+                    '"': "smart quote (U+201C) - replace with regular quote \"",
+                    '"': "smart quote (U+201D) - replace with regular quote \"",
+                    '–': "en dash (U+2013) - replace with regular dash -",
+                    '—': "em dash (U+2014) - replace with regular dash -",
+                    '←': "left arrow (U+2190) - replace with <-",
+                    '→': "right arrow (U+2192) - replace with ->",
+                    '…': "ellipsis (U+2026) - replace with ..."
+                }
+                
+                found_chars = []
+                for char, description in problematic_chars.items():
+                    if char in utf8_content:
+                        # Find positions of the character
+                        positions = [i for i, c in enumerate(utf8_content) if c == char]
+                        found_chars.append(f"   • {description} (found at positions: {positions[:3]}{'...' if len(positions) > 3 else ''})")
+                
+                if found_chars:
+                    errors.append("🔍 PROBLEMATIC CHARACTERS FOUND:")
+                    errors.extend(found_chars)
+                    
+            except Exception as inner_e:
+                errors.append(f"Unable to analyze file content: {inner_e}")
+        
+        except Exception as e:
+            errors.append(f"File read error: {e}")
+            
+        return errors
     
     def _validate_sublayout(self, sublayout_def: Dict[str, Any], flow_path: Path = None) -> List[str]:
         """
@@ -232,9 +296,15 @@ class FlowValidator:
             errors.append(f"Defaults file not found: {defaults_path} (resolved to: {full_defaults_path})")
             return errors
         
+        # Validate encoding first
+        encoding_errors = self._validate_file_encoding(full_defaults_path)
+        if encoding_errors:
+            errors.extend([f"Defaults file encoding issue in {defaults_path}: {error}" for error in encoding_errors])
+            return errors
+        
         # Validate YAML syntax
         try:
-            with open(full_defaults_path, 'r') as f:
+            with open(full_defaults_path, 'r', encoding='utf-8') as f:
                 defaults_content = yaml.safe_load(f)
                 
             if defaults_content is None:

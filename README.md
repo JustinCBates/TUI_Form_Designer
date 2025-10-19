@@ -2,6 +2,12 @@
 
 **Create beautiful, interactive command-line forms and configuration wizards using YAML flow definitions.**
 
+## 🚨 **CRITICAL ISSUE ALERT**
+
+**⚠️ PRODUCTION SAFETY WARNING**: There is a critical signal handling issue that prevents users from exiting applications normally (Ctrl+C doesn't work). **READ `CRITICAL-SIGNAL-HANDLING-ISSUE.md` BEFORE USING IN PRODUCTION.**
+
+**Status**: Documented with workarounds available. Fix is Priority 0 in backlog.
+
 ## 📦 **Dual Package Architecture**
 
 TUI Form Designer is split into two packages for optimal deployment flexibility:

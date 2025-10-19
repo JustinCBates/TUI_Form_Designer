@@ -1,4 +1,4 @@
-flow_id: "simple_survey"
+layout_id: "simple_survey"
 title: "User Satisfaction Survey"
 description: "A basic survey to gather user feedback and satisfaction ratings"
 icon: "📋"
