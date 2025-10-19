@@ -30,7 +30,7 @@ jobs:
       - name: Run tests
         run: |
           if [ -d tests ]; then
-            pytest tests/ --cov --cov-report=term-missing
+            pytest
           else
             echo "No tests directory found, skipping tests"
           fi
