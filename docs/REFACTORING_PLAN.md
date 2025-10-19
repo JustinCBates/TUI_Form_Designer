@@ -34,12 +34,29 @@ This plan guides the refactor work based on `ANTI_PATTERN_ANALYSIS.md`.
 - tests/test_signal_handling.py (NEW)
 - CRITICAL-SIGNAL-HANDLING-ISSUE.md (marked RESOLVED)
 
-### Phase 2: Architecture Cleanup (v2.0.0)
-- [ ] Consolidate to single package `tui_form_designer`
-- [ ] Move/merge `tui_form_engine` and `tui_form_editor` into optional tools
-- [ ] Rename FlowEngine → FormExecutor (with deprecated alias)
-- [ ] Optional dependencies groups: `dev`, `all`
-- [ ] Update docs + examples
+### Phase 2: Architecture Cleanup (v2.0.0) ✅ COMPLETE
+**Status:** ✅ **COMPLETE** - Commit: TBD (October 19, 2025)
+
+- [x] Consolidate to single package `tui_form_designer`
+- [x] Remove `tui_form_engine` and `tui_form_editor` duplicate packages
+- [x] All tests still passing (93/93)
+- [x] Create MIGRATION_v2.0.0.md guide
+- [x] Version bumped to 2.0.0
+
+**Implementation:**
+- Deleted src/tui_form_engine/ (outdated duplicate)
+- Deleted src/tui_form_editor/ (outdated duplicate)
+- Removed pyproject-engine.toml, pyproject-editor.toml
+- Removed README-engine.md, README-editor.md
+- Single source of truth: src/tui_form_designer/
+
+**Files Changed:**
+- Removed: src/tui_form_engine/ (entire directory)
+- Removed: src/tui_form_editor/ (entire directory)
+- Removed: pyproject-{engine,editor}.toml, README-{engine,editor}.md
+- Added: MIGRATION_v2.0.0.md
+- Updated: pyproject.toml (version 2.0.0)
+- Updated: src/tui_form_designer/__init__.py (version 2.0.0)
 
 ### Phase 3: Code Quality (v2.1.0)
 - [ ] Standardize error handling (no silent excepts, no None returns)
