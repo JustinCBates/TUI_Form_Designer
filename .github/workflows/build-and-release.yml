@@ -6,6 +6,9 @@ on:
       - build
   workflow_dispatch:
 
+permissions:
+  contents: write
+  
 jobs:
   test:
     name: Run Tests
