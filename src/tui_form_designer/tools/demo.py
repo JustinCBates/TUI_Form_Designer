@@ -133,7 +133,7 @@ def create_sample_flows(flows_dir: str):
     
     # Sample 1: Simple Survey
     survey_flow = {
-        'flow_id': 'simple_survey',
+        'layout_id': 'simple_survey',
         'title': 'Simple Survey',
         'description': 'A basic user satisfaction survey',
         'icon': '📋',
@@ -181,7 +181,7 @@ def create_sample_flows(flows_dir: str):
     
     # Sample 2: Application Setup
     setup_flow = {
-        'flow_id': 'app_setup',
+        'layout_id': 'app_setup',
         'title': 'Application Setup Wizard',
         'description': 'Configure your application settings',
         'icon': '⚙️',
@@ -239,7 +239,7 @@ def create_sample_flows(flows_dir: str):
     
     # Sample 3: User Registration
     registration_flow = {
-        'flow_id': 'user_registration',
+        'layout_id': 'user_registration',
         'title': 'User Registration',
         'description': 'Register a new user account',
         'icon': '👤',

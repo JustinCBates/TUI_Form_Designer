@@ -1,0 +1,42 @@
+layout_id: app_setup
+title: Application Setup Wizard
+description: Configure your application settings
+icon: "\u2699\uFE0F"
+steps:
+- id: app_name
+  type: text
+  message: 'Application name:'
+  default: MyApp
+  validate: required
+- id: environment
+  type: select
+  message: 'Deployment environment:'
+  choices:
+  - development
+  - staging
+  - production
+  default: development
+- id: database_url
+  type: text
+  message: 'Database URL:'
+  default: postgresql://localhost:5432/myapp
+  instruction: Full connection string for your database
+- id: enable_debug
+  type: confirm
+  message: Enable debug mode?
+  default: true
+  condition: environment == development
+- id: admin_email
+  type: text
+  message: 'Administrator email:'
+  validate: email
+  instruction: Email for system notifications
+output_mapping:
+  application:
+    name: app_name
+    environment: environment
+    debug_enabled: enable_debug
+  database:
+    url: database_url
+  admin:
+    email: admin_email

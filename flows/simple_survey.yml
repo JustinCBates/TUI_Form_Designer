@@ -1,0 +1,32 @@
+layout_id: simple_survey
+title: Simple Survey
+description: A basic user satisfaction survey
+icon: "\U0001F4CB"
+steps:
+- id: user_name
+  type: text
+  message: What's your name?
+  validate: required
+- id: satisfaction
+  type: select
+  message: How satisfied are you with our service?
+  choices:
+  - "\U0001F60D Very Satisfied"
+  - "\U0001F60A Satisfied"
+  - "\U0001F610 Neutral"
+  - "\U0001F61E Dissatisfied"
+  - "\U0001F621 Very Dissatisfied"
+- id: recommend
+  type: confirm
+  message: Would you recommend us to others?
+  default: true
+- id: feedback
+  type: text
+  message: Any additional feedback? (optional)
+  instruction: Your feedback helps us improve
+output_mapping:
+  user:
+    name: user_name
+    satisfaction: satisfaction
+    would_recommend: recommend
+    feedback: feedback

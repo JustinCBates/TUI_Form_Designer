@@ -1,0 +1,47 @@
+layout_id: user_registration
+title: User Registration
+description: Register a new user account
+icon: "\U0001F464"
+steps:
+- id: username
+  type: text
+  message: 'Choose a username:'
+  validate: required
+  instruction: Must be unique and at least 3 characters
+- id: email
+  type: text
+  message: 'Email address:'
+  validate: email
+- id: password
+  type: password
+  message: 'Password:'
+  validate: password_length
+  instruction: At least 8 characters
+- id: account_type
+  type: select
+  message: 'Account type:'
+  choices:
+  - Basic
+  - Premium
+  - Enterprise
+  default: Basic
+- id: newsletter
+  type: confirm
+  message: Subscribe to newsletter?
+  default: false
+  instruction: Get updates about new features
+- id: terms_accepted
+  type: confirm
+  message: Accept terms and conditions?
+  default: false
+  instruction: Required to create account
+output_mapping:
+  user:
+    username: username
+    email: email
+    password: password
+    account_type: account_type
+  preferences:
+    newsletter: newsletter
+  legal:
+    terms_accepted: terms_accepted

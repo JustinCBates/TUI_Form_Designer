@@ -107,8 +107,8 @@ class InteractiveFlowDesigner:
         self.ui.show_phase_header("Creating New Flow", "✨")
         
         # Basic flow information
-        flow_id = self.ui.prompt(
-            "Flow ID (filename without .yml):", 
+        layout_id = self.ui.prompt(
+            "Layout ID (filename without .yml):", 
             allow_empty=False
         ).lower().replace(' ', '_')
         
@@ -118,7 +118,7 @@ class InteractiveFlowDesigner:
         
         # Create flow structure
         flow_def = {
-            'flow_id': flow_id,
+            'layout_id': layout_id,
             'title': title,
             'description': description,
             'icon': icon,
@@ -140,11 +140,11 @@ class InteractiveFlowDesigner:
                 flow_def['output_mapping'] = output_mapping
         
         # Save flow
-        flow_path = self.flows_dir / f"{flow_id}.yml"
+        flow_path = self.flows_dir / f"{layout_id}.yml"
         try:
             with open(flow_path, 'w') as f:
                 yaml.dump(flow_def, f, default_flow_style=False, sort_keys=False)
-            self.ui.show_success(f"Flow '{flow_id}' created successfully!")
+            self.ui.show_success(f"Flow '{layout_id}' created successfully!")
         except Exception as e:
             self.ui.show_error(f"Failed to save flow: {e}")
     

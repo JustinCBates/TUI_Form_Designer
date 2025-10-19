@@ -6,7 +6,7 @@ import yaml
 from typing import Dict, Any, Optional, List, Callable, Union
 from pathlib import Path
 import re
-from .exceptions import FlowValidationError, FlowExecutionError
+from .exceptions import FormValidationError, FormExecutionError
 
 
 class FormExecutor:
@@ -135,7 +135,7 @@ class FormExecutor:
                         questionary.print(f"   📋 {preview_text}", style="bold green")
                 except KeyboardInterrupt:
                     questionary.print("\\n❌ Flow execution cancelled by user.", style="bold red")
-                    raise FlowExecutionError("Flow execution cancelled by user")
+                    raise FormExecutionError("Flow execution cancelled by user")
         
         # Apply output mapping if specified
         if 'output_mapping' in flow_def:
@@ -321,13 +321,13 @@ class FormExecutor:
         """Load flow definition from YAML file."""
         flow_path = self.flows_dir / f"{flow_id}.yml"
         if not flow_path.exists():
-            raise FlowValidationError(f"Flow definition not found: {flow_path}")
+            raise FormValidationError(f"Flow definition not found: {flow_path}")
         
         try:
             with open(flow_path, 'r') as f:
                 flow_def = yaml.safe_load(f)
                 if not flow_def:
-                    raise FlowValidationError(f"Empty or invalid YAML in {flow_path}")
+                    raise FormValidationError(f"Empty or invalid YAML in {flow_path}")
                 
                 # Load and merge defaults if defaults_file is specified
                 if 'defaults_file' in flow_def:
@@ -335,7 +335,7 @@ class FormExecutor:
                 
                 return flow_def
         except yaml.YAMLError as e:
-            raise FlowValidationError(f"Invalid YAML in {flow_path}: {e}")
+            raise FormValidationError(f"Invalid YAML in {flow_path}: {e}")
     
     def _merge_defaults(self, flow_def: Dict[str, Any], flow_path: Path) -> Dict[str, Any]:
         """

@@ -19,8 +19,9 @@ from rich.panel import Panel
 from rich.text import Text
 from rich.progress import Progress, SpinnerColumn, TextColumn
 
-from .core.flow_engine import FlowEngine
-from .core.exceptions import FlowValidationError, FlowExecutionError
+from .core.form_executor import FormExecutor
+from .core.exceptions import FormValidationError, FormExecutionError
+from .preprocessing import LayoutPreprocessor, DefaultsPreprocessor
 
 
 class FormRenderer:
@@ -29,23 +30,28 @@ class FormRenderer:
     def __init__(self, console: Optional[Console] = None):
         """Initialize the renderer."""
         self.console = console or Console()
-        self.engine = FlowEngine()
+        self.engine = FormExecutor()
     
     def render_flow(
         self, 
         flow_path: str, 
         mock_responses: Optional[Dict[str, Any]] = None,
         output_file: Optional[str] = None,
-        quiet: bool = False
+        quiet: bool = False,
+        debug_output_dir: Optional[Path] = None
     ) -> Dict[str, Any]:
         """
         Render and execute a flow for end-user interaction.
         
+        Automatically handles sublayouts and hierarchical defaults transparently.
+        All preprocessing is done in-memory - no intermediate files are generated.
+        
         Args:
-            flow_path: Path to the YAML flow definition
+            flow_path: Path to the YAML flow definition (may contain sublayout references)
             mock_responses: Optional mock responses for testing
             output_file: Optional file to save responses to
             quiet: Suppress non-essential output
+            debug_output_dir: Optional directory to save preprocessed files for debugging
             
         Returns:
             Dict containing user inputs and metadata
@@ -54,16 +60,45 @@ class FormRenderer:
             self._show_welcome()
         
         try:
-            # Load and validate flow definition
-            flow_def = self._load_flow_yaml(flow_path)
-            flow_id = flow_def.get('metadata', {}).get('id', 'unnamed_flow')
+            # Load flow definition
+            flow_path_obj = Path(flow_path)
+            flow_data = self._load_flow_yaml(flow_path)
+            
+            # === IN-MEMORY PREPROCESSING ===
+            # Detect and handle sublayouts + hierarchical defaults transparently
+            if self._has_sublayouts(flow_data):
+                if not quiet:
+                    self.console.print("🔄 Processing sublayouts...", style="dim")
+                
+                # Use LayoutPreprocessor to merge sublayouts in-memory
+                layout_preprocessor = LayoutPreprocessor(layouts_dir=flow_path_obj.parent)
+                flow_data = layout_preprocessor.reconstruct_virtual_layout(
+                    layout_path=flow_path_obj,
+                    save_virtual=bool(debug_output_dir),
+                    output_path=debug_output_dir / f"{flow_path_obj.stem}_virtual.yml" if debug_output_dir else None
+                )
+                
+                # Use DefaultsPreprocessor to merge hierarchical defaults in-memory
+                defaults_preprocessor = DefaultsPreprocessor(layouts_dir=flow_path_obj.parent)
+                unified_defaults = defaults_preprocessor.merge_defaults(
+                    layout_path=flow_path_obj,
+                    layout_data=flow_data,
+                    save_unified=bool(debug_output_dir),
+                    output_path=debug_output_dir / "unified_defaults.yml" if debug_output_dir else None
+                )
+                
+                # Update flow to use unified defaults
+                if unified_defaults and debug_output_dir:
+                    flow_data['defaults_file'] = str((debug_output_dir / "unified_defaults.yml").absolute())
+            
+            flow_id = flow_data.get('metadata', {}).get('id', 'unnamed_flow')
             
             # Pre-validate flow structure before showing progress
-            self._validate_flow_structure(flow_def)
+            self._validate_flow_structure(flow_data)
             
             if not quiet:
                 self.console.print(f"📁 Loading flow from: [cyan]{flow_path}[/cyan]")
-                self._show_flow_info(flow_def)
+                self._show_flow_info(flow_data)
             
             # Execute the flow using the engine
             with Progress(
@@ -75,18 +110,19 @@ class FormRenderer:
                 if not quiet:
                     task = progress.add_task("Preparing form...", total=None)
                 
-                # Execute the flow - use the flow definition directly
+                # Execute the flow - use the preprocessed flow definition directly
                 # Create a temporary flow ID from the metadata or filename
-                flow_id = flow_def.get('metadata', {}).get('id') or Path(flow_path).stem
+                flow_id = flow_data.get('metadata', {}).get('id') or Path(flow_path).stem
                 
                 # Set the flows directory to the directory containing the flow file
                 flow_dir = Path(flow_path).parent
                 self.engine.flows_dir = flow_dir
                 
-                # Execute using the flow ID
+                # Execute using the preprocessed flow data directly (bypasses file loading)
                 responses = self.engine.execute_flow(
                     flow_id, 
-                    mock_responses=mock_responses
+                    mock_responses=mock_responses,
+                    flow_data=flow_data  # Pass preprocessed data (with merged sublayouts)
                 )
                 
                 if not quiet:
@@ -115,6 +151,15 @@ class FormRenderer:
         except Exception as e:
             self.console.print(f"[red]❌ Error: {str(e)}[/red]")
             raise
+    
+    def _has_sublayouts(self, flow_data: Dict[str, Any]) -> bool:
+        """Check if the flow definition contains sublayout references."""
+        steps = flow_data.get('steps', [])
+        for step in steps:
+            # Sublayouts are identified by having 'subid' and 'sublayout' fields
+            if 'subid' in step and 'sublayout' in step:
+                return True
+        return False
     
     def _load_flow_yaml(self, flow_path: str) -> Dict[str, Any]:
         """Load flow definition from YAML file."""
