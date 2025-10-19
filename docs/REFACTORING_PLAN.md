@@ -14,11 +14,25 @@ This plan guides the refactor work based on `ANTI_PATTERN_ANALYSIS.md`.
 
 ## Phases
 
-### Phase 1: Critical Safety Fix (v1.1.0)
-- [ ] Implement robust Ctrl+C propagation (no silent None returns)
-- [ ] Add emergency exit (double Ctrl+C → force exit)
-- [ ] Add signal handling tests (single, loop, nested)
-- [ ] Update CRITICAL-SIGNAL-HANDLING-ISSUE.md to resolved
+### Phase 1: Critical Safety Fix (v1.1.0) ✅ COMPLETE
+**Status:** ✅ **COMPLETE** - Commit: `3a82ce3` (January 19, 2025)  
+**Duration:** ~2 hours  
+
+- [x] Implement robust Ctrl+C propagation (no silent None returns)
+- [x] Add emergency exit (double Ctrl+C → force exit)
+- [x] Add signal handling tests (single, loop, nested)
+- [x] Update CRITICAL-SIGNAL-HANDLING-ISSUE.md to resolved
+
+**Implementation:**
+- Added None-return detection after question.ask()
+- Emergency exit handler (double Ctrl+C within 2 seconds → sys.exit(130))
+- Signal handler install/restore in execute_flow()
+- 2/2 tests passing in tests/test_signal_handling.py
+
+**Files Changed:**
+- src/tui_form_designer/core/flow_engine.py (+signal handling)
+- tests/test_signal_handling.py (NEW)
+- CRITICAL-SIGNAL-HANDLING-ISSUE.md (marked RESOLVED)
 
 ### Phase 2: Architecture Cleanup (v2.0.0)
 - [ ] Consolidate to single package `tui_form_designer`
