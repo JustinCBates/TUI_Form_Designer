@@ -514,7 +514,7 @@ class FlowEngine:
             raise FlowValidationError(f"Flow definition not found: {flow_path}")
 
         try:
-            with open(flow_path, "r", encoding="utf-8") as f:
+            with open(flow_path, encoding="utf-8") as f:
                 flow_def = yaml.safe_load(f)
                 if not flow_def:
                     raise FlowValidationError(f"Empty or invalid YAML in {flow_path}")

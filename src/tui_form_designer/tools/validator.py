@@ -71,7 +71,7 @@ class FlowValidator:
                 return False
 
             # Load YAML with explicit UTF-8 encoding
-            with open(flow_path, "r", encoding="utf-8") as f:
+            with open(flow_path, encoding="utf-8") as f:
                 flow_content = f.read()
                 flow_def = yaml.safe_load(flow_content)
 
@@ -150,7 +150,7 @@ class FlowValidator:
 
         try:
             # Try to read file without encoding specified (system default)
-            with open(file_path, "r") as f:
+            with open(file_path) as f:
                 content = f.read()
         except UnicodeDecodeError as e:
             errors.append(f"🔧 ENCODING ERROR: {e}")
@@ -160,15 +160,15 @@ class FlowValidator:
 
             # Try to read with UTF-8 to identify specific issues
             try:
-                with open(file_path, "r", encoding="utf-8", errors="replace") as f:
+                with open(file_path, encoding="utf-8", errors="replace") as f:
                     utf8_content = f.read()
 
                 # Check for common problematic characters
                 problematic_chars = {
                     """: "smart quote (U+2018) - replace with regular apostrophe '",
                     """: "smart quote (U+2019) - replace with regular apostrophe '",
-                    '"': 'smart quote (U+201C) - replace with regular quote "',
-                    '"': 'smart quote (U+201D) - replace with regular quote "',
+                    """: 'smart quote (U+201C) - replace with regular quote "',
+                    """: 'smart quote (U+201D) - replace with regular quote "',
                     "–": "en dash (U+2013) - replace with regular dash -",
                     "—": "em dash (U+2014) - replace with regular dash -",
                     "←": "left arrow (U+2190) - replace with <-",
@@ -371,7 +371,7 @@ class FlowValidator:
 
         # Validate YAML syntax
         try:
-            with open(full_defaults_path, "r", encoding="utf-8") as f:
+            with open(full_defaults_path, encoding="utf-8") as f:
                 defaults_content = yaml.safe_load(f)
 
             if defaults_content is None:
@@ -419,7 +419,7 @@ class FlowValidator:
 
                 # Validate the sublayout file itself
                 try:
-                    with open(sublayout_full_path, "r") as f:
+                    with open(sublayout_full_path) as f:
                         sublayout_content = f.read()
                         sublayout_def = yaml.safe_load(sublayout_content)
 
@@ -509,13 +509,13 @@ def main():
 Examples:
   # Production-ready validation (DEFAULT - strict mode enabled)
   tui-designer validate
-  
+
   # Validate specific files (strict by default)
   tui-designer validate my_form.yml
-  
+
   # Disable strict mode for development (NOT RECOMMENDED)
   tui-designer validate --no-strict
-  
+
   # Interactive mode
   tui-designer validate --interactive
 
@@ -525,7 +525,7 @@ Validation Modes:
   - Placeholder ID patterns (example_*, test_*, etc.)
   - Generic messages and instructions
   - Scaffolding template patterns
-  
+
   Use --no-strict only during active development.
   Always use strict mode (default) before committing or deploying.
         """,

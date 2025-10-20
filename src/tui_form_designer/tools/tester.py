@@ -31,7 +31,7 @@ class FlowTester:
         mock_responses = {}
         if mock_file:
             try:
-                with open(mock_file, "r") as f:
+                with open(mock_file) as f:
                     mock_responses = json.load(f)
                 self.ui.show_info(f"Loaded mock responses from {mock_file}")
             except Exception as e:
@@ -80,7 +80,7 @@ class FlowTester:
                 flow_path = self.flows_dir / f"{flow_id}.yml"
                 import yaml
 
-                with open(flow_path, "r") as f:
+                with open(flow_path) as f:
                     flow_def = yaml.safe_load(f)
 
                 errors = self.flow_engine.validate_flow(flow_def)
@@ -154,7 +154,7 @@ class FlowTester:
             flow_path = self.flows_dir / f"{flow_id}.yml"
             import yaml
 
-            with open(flow_path, "r") as f:
+            with open(flow_path) as f:
                 flow_def = yaml.safe_load(f)
 
             mock_template = {}

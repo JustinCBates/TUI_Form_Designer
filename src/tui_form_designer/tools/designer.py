@@ -185,7 +185,7 @@ class InteractiveFlowDesigner:
         for flow_id in flows:
             try:
                 flow_path = self.flows_dir / f"{flow_id}.yml"
-                with open(flow_path, "r") as f:
+                with open(flow_path) as f:
                     flow_def = yaml.safe_load(f)
                 title = flow_def.get("title", flow_id)
                 description = flow_def.get("description", "No description")
@@ -208,7 +208,7 @@ class InteractiveFlowDesigner:
 
         try:
             flow_path = self.flows_dir / f"{flow_id}.yml"
-            with open(flow_path, "r") as f:
+            with open(flow_path) as f:
                 flow_def = yaml.safe_load(f)
 
             errors = self.flow_engine.validate_flow(flow_def)

@@ -52,7 +52,7 @@ def demo_interactive_selection(flow_engine: FlowEngine, flows: list, ui: Questio
                 flow_path = flow_engine.flows_dir / f"{flow_id}.yml"
                 import yaml
 
-                with open(flow_path, "r") as f:
+                with open(flow_path) as f:
                     flow_def = yaml.safe_load(f)
 
                 title = flow_def.get("title", flow_id)
@@ -91,7 +91,7 @@ def demo_specific_flow(flow_engine: FlowEngine, flow_id: str, ui: QuestionaryUI)
         flow_path = flow_engine.flows_dir / f"{flow_id}.yml"
         import yaml
 
-        with open(flow_path, "r") as f:
+        with open(flow_path) as f:
             flow_def = yaml.safe_load(f)
 
         title = flow_def.get("title", flow_id)

@@ -27,7 +27,7 @@ class FlowPreviewer:
         """Preview a flow or specific step."""
         try:
             flow_path = self.flows_dir / f"{flow_id}.yml"
-            with open(flow_path, "r") as f:
+            with open(flow_path) as f:
                 flow_def = yaml.safe_load(f)
 
             if step_id:
@@ -185,7 +185,7 @@ class FlowPreviewer:
         for flow_id in flows:
             try:
                 flow_path = self.flows_dir / f"{flow_id}.yml"
-                with open(flow_path, "r") as f:
+                with open(flow_path) as f:
                     flow_def = yaml.safe_load(f)
 
                 title = flow_def.get("title", flow_id)
@@ -237,7 +237,7 @@ class FlowPreviewer:
                 # Load flow to get steps
                 try:
                     flow_path = self.flows_dir / f"{flow_id}.yml"
-                    with open(flow_path, "r") as f:
+                    with open(flow_path) as f:
                         flow_def = yaml.safe_load(f)
 
                     steps = flow_def.get("steps", [])
