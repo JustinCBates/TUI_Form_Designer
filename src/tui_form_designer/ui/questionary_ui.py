@@ -193,7 +193,9 @@ class QuestionaryUI:
             return default or 0
 
     def prompt_password(
-        self, message: str = "Password", validate: Optional[Callable[[str], bool]] = None
+        self,
+        message: str = "Password",
+        validate: Optional[Callable[[str], bool]] = None,
     ) -> str:
         """Prompt user for password input."""
         try:
