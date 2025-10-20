@@ -2,7 +2,7 @@
 
 import questionary
 from questionary import Style, prompt, form, select, text, confirm, print as qprint
-from typing import Dict, Any, List, Optional, Union
+from typing import Dict, Any, List, Optional, Union, Callable
 import sys
 
 
@@ -139,7 +139,7 @@ class QuestionaryUI:
         message: str,
         default: str = "",
         allow_empty: bool = False,
-        validate: Optional[callable] = None,
+        validate: Optional[Callable[[str], bool]] = None,
     ) -> str:
         """Prompt user for text input."""
         try:
@@ -193,7 +193,7 @@ class QuestionaryUI:
             return default or 0
 
     def prompt_password(
-        self, message: str = "Password", validate: Optional[callable] = None
+        self, message: str = "Password", validate: Optional[Callable[[str], bool]] = None
     ) -> str:
         """Prompt user for password input."""
         try:

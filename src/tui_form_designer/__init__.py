@@ -5,7 +5,7 @@ Create beautiful, interactive command-line forms and configuration wizards using
 YAML flow definitions instead of hardcoded Python prompts.
 """
 
-__version__ = "2.0.0"
+__version__ = "2.1.0"
 __author__ = "OpenProject Team"
 __email__ = "support@openproject.org"
 
