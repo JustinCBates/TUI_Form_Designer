@@ -23,46 +23,40 @@ def temp_flows_dir():
 def sample_flow_definition() -> Dict[str, Any]:
     """Sample flow definition for testing."""
     return {
-        'flow_id': 'test_flow',
-        'title': 'Test Flow',
-        'description': 'A flow for testing',
-        'icon': '🧪',
-        'steps': [
+        "flow_id": "test_flow",
+        "title": "Test Flow",
+        "description": "A flow for testing",
+        "icon": "🧪",
+        "steps": [
             {
-                'id': 'name',
-                'type': 'text',
-                'message': 'Enter your name:',
-                'validate': 'required'
+                "id": "name",
+                "type": "text",
+                "message": "Enter your name:",
+                "validate": "required",
             },
             {
-                'id': 'age',
-                'type': 'text',
-                'message': 'Enter your age:',
-                'validate': 'integer'
+                "id": "age",
+                "type": "text",
+                "message": "Enter your age:",
+                "validate": "integer",
             },
             {
-                'id': 'email',
-                'type': 'text', 
-                'message': 'Enter your email:',
-                'validate': 'email'
+                "id": "email",
+                "type": "text",
+                "message": "Enter your email:",
+                "validate": "email",
             },
             {
-                'id': 'subscribe',
-                'type': 'confirm',
-                'message': 'Subscribe to newsletter?',
-                'default': False
-            }
+                "id": "subscribe",
+                "type": "confirm",
+                "message": "Subscribe to newsletter?",
+                "default": False,
+            },
         ],
-        'output_mapping': {
-            'user': {
-                'name': 'name',
-                'age': 'age',
-                'email': 'email'
-            },
-            'preferences': {
-                'newsletter': 'subscribe'
-            }
-        }
+        "output_mapping": {
+            "user": {"name": "name", "age": "age", "email": "email"},
+            "preferences": {"newsletter": "subscribe"},
+        },
     }
 
 
@@ -70,29 +64,29 @@ def sample_flow_definition() -> Dict[str, Any]:
 def conditional_flow_definition() -> Dict[str, Any]:
     """Flow definition with conditional logic for testing."""
     return {
-        'flow_id': 'conditional_test',
-        'title': 'Conditional Test Flow',
-        'description': 'Testing conditional logic',
-        'steps': [
+        "flow_id": "conditional_test",
+        "title": "Conditional Test Flow",
+        "description": "Testing conditional logic",
+        "steps": [
             {
-                'id': 'enable_feature',
-                'type': 'confirm',
-                'message': 'Enable advanced features?',
-                'default': False
+                "id": "enable_feature",
+                "type": "confirm",
+                "message": "Enable advanced features?",
+                "default": False,
             },
             {
-                'id': 'feature_config',
-                'type': 'text',
-                'message': 'Configure feature:',
-                'condition': 'enable_feature == true'
+                "id": "feature_config",
+                "type": "text",
+                "message": "Configure feature:",
+                "condition": "enable_feature == true",
             },
             {
-                'id': 'basic_setting',
-                'type': 'text',
-                'message': 'Basic setting:',
-                'condition': 'enable_feature == false'
-            }
-        ]
+                "id": "basic_setting",
+                "type": "text",
+                "message": "Basic setting:",
+                "condition": "enable_feature == false",
+            },
+        ],
     }
 
 
@@ -100,30 +94,26 @@ def conditional_flow_definition() -> Dict[str, Any]:
 def invalid_flow_definition() -> Dict[str, Any]:
     """Invalid flow definition for testing validation."""
     return {
-        'flow_id': 'invalid_flow',
-        'title': 'Invalid Flow',
-        'steps': [
+        "flow_id": "invalid_flow",
+        "title": "Invalid Flow",
+        "steps": [
             {
                 # Missing 'id' field
-                'type': 'text',
-                'message': 'This step has no ID'
+                "type": "text",
+                "message": "This step has no ID",
+            },
+            {"id": "duplicate_id", "type": "text", "message": "First step"},
+            {
+                "id": "duplicate_id",  # Duplicate ID
+                "type": "text",
+                "message": "Second step with same ID",
             },
             {
-                'id': 'duplicate_id',
-                'type': 'text',
-                'message': 'First step'
+                "id": "invalid_type",
+                "type": "invalid_type",  # Invalid step type
+                "message": "Invalid step type",
             },
-            {
-                'id': 'duplicate_id',  # Duplicate ID
-                'type': 'text',
-                'message': 'Second step with same ID'
-            },
-            {
-                'id': 'invalid_type',
-                'type': 'invalid_type',  # Invalid step type
-                'message': 'Invalid step type'
-            }
-        ]
+        ],
     }
 
 
@@ -143,7 +133,7 @@ def questionary_ui():
 def sample_flow_file(temp_flows_dir, sample_flow_definition):
     """Create a sample flow file."""
     flow_path = temp_flows_dir / "test_flow.yml"
-    with open(flow_path, 'w') as f:
+    with open(flow_path, "w") as f:
         yaml.dump(sample_flow_definition, f)
     return flow_path
 
@@ -152,8 +142,8 @@ def sample_flow_file(temp_flows_dir, sample_flow_definition):
 def mock_responses():
     """Sample mock responses for testing."""
     return {
-        'name': 'Test User',
-        'age': '25',
-        'email': 'test@example.com',
-        'subscribe': True
+        "name": "Test User",
+        "age": "25",
+        "email": "test@example.com",
+        "subscribe": True,
     }

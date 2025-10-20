@@ -1,7 +1,8 @@
 """Questionary-based UI components for TUI Form Designer."""
 
 import questionary
-from questionary import Style, prompt, form, select, text, confirm, print as qprint
+from questionary import Style, form, select, text
+from questionary import print as qprint
 from typing import Dict, Any, List, Optional, Union, Callable
 import sys
 
@@ -193,7 +194,9 @@ class QuestionaryUI:
             return default or 0
 
     def prompt_password(
-        self, message: str = "Password", validate: Optional[Callable[[str], bool]] = None
+        self,
+        message: str = "Password",
+        validate: Optional[Callable[[str], bool]] = None,
     ) -> str:
         """Prompt user for password input."""
         try:
