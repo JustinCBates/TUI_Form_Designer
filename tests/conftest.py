@@ -23,7 +23,7 @@ def temp_flows_dir():
 def sample_flow_definition() -> Dict[str, Any]:
     """Sample flow definition for testing."""
     return {
-        "flow_id": "test_flow",
+        "layout_id": "test_flow",
         "title": "Test Flow",
         "description": "A flow for testing",
         "icon": "🧪",
@@ -64,7 +64,7 @@ def sample_flow_definition() -> Dict[str, Any]:
 def conditional_flow_definition() -> Dict[str, Any]:
     """Flow definition with conditional logic for testing."""
     return {
-        "flow_id": "conditional_test",
+        "layout_id": "conditional_test",
         "title": "Conditional Test Flow",
         "description": "Testing conditional logic",
         "steps": [
@@ -94,7 +94,7 @@ def conditional_flow_definition() -> Dict[str, Any]:
 def invalid_flow_definition() -> Dict[str, Any]:
     """Invalid flow definition for testing validation."""
     return {
-        "flow_id": "invalid_flow",
+        "layout_id": "invalid_flow",
         "title": "Invalid Flow",
         "steps": [
             {

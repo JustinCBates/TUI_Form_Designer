@@ -18,7 +18,7 @@ class TestEndToEndWorkflows:
         """Test complete survey creation and execution workflow."""
         # Create survey flow
         survey_flow = {
-            "flow_id": "customer_survey",
+            "layout_id": "customer_survey",
             "title": "Customer Satisfaction Survey",
             "description": "Help us improve our service",
             "icon": "📋",
@@ -98,7 +98,7 @@ class TestEndToEndWorkflows:
     def test_application_configuration_workflow(self, temp_flows_dir):
         """Test application configuration workflow with conditional logic."""
         config_flow = {
-            "flow_id": "app_config",
+            "layout_id": "app_config",
             "title": "Application Configuration",
             "description": "Configure your application settings",
             "steps": [
@@ -201,7 +201,7 @@ class TestEndToEndWorkflows:
     def test_validation_workflow(self, temp_flows_dir):
         """Test validation workflow with various input types."""
         validation_flow = {
-            "flow_id": "validation_test",
+            "layout_id": "validation_test",
             "title": "Validation Test",
             "description": "Test input validation",
             "steps": [
@@ -257,7 +257,7 @@ class TestEndToEndWorkflows:
         """Test error handling in various scenarios."""
         # Test with invalid flow definition
         invalid_flow = {
-            "flow_id": "invalid_test",
+            "layout_id": "invalid_test",
             "title": "Invalid Test",
             "steps": [
                 {
@@ -281,7 +281,7 @@ class TestEndToEndWorkflows:
     def test_complex_nested_mapping_workflow(self, temp_flows_dir):
         """Test complex nested output mapping."""
         complex_flow = {
-            "flow_id": "complex_mapping",
+            "layout_id": "complex_mapping",
             "title": "Complex Mapping Test",
             "steps": [
                 {"id": "user_name", "type": "text", "message": "Name:"},
@@ -345,12 +345,12 @@ class TestEndToEndWorkflows:
         # Create multiple flows
         flows = {
             "survey": {
-                "flow_id": "survey",
+                "layout_id": "survey",
                 "title": "Survey",
                 "steps": [{"id": "q1", "type": "text", "message": "Question 1:"}],
             },
             "config": {
-                "flow_id": "config",
+                "layout_id": "config",
                 "title": "Configuration",
                 "steps": [{"id": "setting", "type": "text", "message": "Setting:"}],
             },
@@ -383,7 +383,7 @@ class TestPerformanceAndReliability:
     def test_large_flow_performance(self, temp_flows_dir):
         """Test performance with large flows."""
         # Create flow with many steps
-        large_flow = {"flow_id": "large_flow", "title": "Large Flow Test", "steps": []}
+        large_flow = {"layout_id": "large_flow", "title": "Large Flow Test", "steps": []}
 
         # Generate 50 steps
         for i in range(50):
@@ -426,7 +426,7 @@ class TestPerformanceAndReliability:
         with open(malformed_path, "w") as f:
             f.write(
                 """
-            flow_id: test
+            layout_id: test
             title: Test
             steps:
               - id: step1
@@ -446,7 +446,7 @@ class TestPerformanceAndReliability:
         # Create many small flows
         for i in range(100):
             flow = {
-                "flow_id": f"flow_{i}",
+                "layout_id": f"flow_{i}",
                 "title": f"Flow {i}",
                 "steps": [
                     {"id": "step1", "type": "text", "message": f"Step in flow {i}:"}

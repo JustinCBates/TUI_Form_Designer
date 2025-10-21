@@ -51,8 +51,8 @@ class FlowPreviewer:
         if flow_def.get("description"):
             self.ui.show_info(f"Description: {flow_def['description']}")
 
-        flow_id = flow_def.get("flow_id", "unknown")
-        self.ui.show_info(f"Flow ID: {flow_id}")
+        layout_id = flow_def.get("layout_id", "unknown")
+        self.ui.show_info(f"Layout ID: {layout_id}")
 
         steps = flow_def.get("steps", [])
         self.ui.show_info(f"Steps: {len(steps)}")

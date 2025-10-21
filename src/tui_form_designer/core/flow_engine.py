@@ -141,10 +141,13 @@ class FlowEngine:
         if _errors:
             raise FlowValidationError("Invalid flow definition: " + "; ".join(_errors))
 
-        # Show flow header
-        questionary.print(
-            f"\\n{flow_def.get('icon', '🔧')} {flow_def['title']}", style="bold blue"
-        )
+        # Show flow header with overline/underline bars (no indent)
+        header_text = f"{flow_def.get('icon', '🔧')} {flow_def['title']}"
+        bar = "-" * len(header_text)
+        # Precede with a newline, then overbar, header, underline
+        questionary.print(f"\n{bar}")
+        questionary.print(header_text, style="bold blue")
+        questionary.print(bar)
         if flow_def.get("description"):
             questionary.print(f"   {flow_def['description']}", style="italic")
 
@@ -152,6 +155,26 @@ class FlowEngine:
         answers = {}
 
         for step in flow_def["steps"]:
+            # Handle sublayout references
+            if "sublayout" in step:
+                sublayout_path = step["sublayout"]
+                # Resolve relative path from parent flow directory
+                if not Path(sublayout_path).is_absolute():
+                    sublayout_path = str(self.flows_dir / sublayout_path)
+                
+                # Load and execute sublayout
+                sublayout_flow_id = Path(sublayout_path).stem
+                sublayout_dir = Path(sublayout_path).parent
+                sublayout_engine = FlowEngine(flows_dir=sublayout_dir)
+                sublayout_responses = sublayout_engine.execute_flow(
+                    flow_id=sublayout_flow_id,
+                    context={**context, **answers},
+                    mock_responses=mock_responses
+                )
+                # Merge sublayout responses into main answers
+                answers.update(sublayout_responses)
+                continue
+            
             if step["type"] == "computed":
                 # Handle computed values
                 if "compute" in step:
@@ -174,6 +197,21 @@ class FlowEngine:
                     style="italic",
                 )
                 continue
+
+                # Handle info steps in mock mode
+                if mock_responses and step.get("type") == "info":
+                    # Always render header-style info steps (with title field)
+                    if step.get("title"):
+                        # This will render the header without blocking
+                        question = self._build_question(step, {**context, **answers})
+                        # _build_question for headers returns None and prints directly
+                    else:
+                        # Skip traditional info prompts in mock mode
+                        questionary.print(
+                            f"   ℹ️  Skipped info step: {step.get('title', step.get('id', 'unknown'))}",
+                            style="italic",
+                        )
+                    continue
 
             # Build and ask question
             question = self._build_question(step, {**context, **answers})
@@ -226,8 +264,8 @@ class FlowEngine:
         """
         errors = []
 
-        # Required top-level fields (tests expect classic 'flow_id')
-        required_fields = ["flow_id", "title", "steps"]
+        # Required top-level fields (updated from flow_id to layout_id)
+        required_fields = ["layout_id", "title", "steps"]
         for field in required_fields:
             if field not in flow_definition:
                 errors.append(f"Missing required field: {field}")
@@ -398,31 +436,78 @@ class FlowEngine:
     def _build_question(self, step: Dict[str, Any], context: Dict[str, Any]):
         """Build a questionary question from step definition."""
 
-        if step["type"] == "select":
+        if step["type"] == "info":
+                # Info steps can be:
+                # 1. Headers (if title is present) - non-interactive
+                # 2. Information prompts (if no title) - wait for Enter
+                if step.get("title"):
+                    # Render as a section header
+                    questionary.print(f"\n{'-' * 30}", style="bold")
+                    questionary.print(f"{step.get('icon', '🔧')} {step['title']}", style="bold blue")
+                    questionary.print(f"{'-' * 30}", style="bold")
+                    if step.get("message"):
+                        questionary.print(f"   {step['message']}", style="italic")
+                    return None  # No question to ask
+                else:
+                    # Traditional info step that waits for user input
+                    message = step.get("message", "")
+                    instruction = step.get("instruction", "Press Enter to continue")
+                    return questionary.press_any_key_to_continue(
+                        message=f"{message}\n\n{instruction}" if message else instruction,
+                        style=self.style
+                    )
+
+        elif step["type"] == "select":
+            # Show field instruction as a separate line above the prompt (if provided)
+            if step.get("instruction"):
+                questionary.print(step["instruction"], style="italic")
             choices = []
+            choice_value_map = {}  # Map values to names for default lookup
+            
             for choice in step["choices"]:
                 if isinstance(choice, dict):
-                    choices.append(choice["name"])
+                    # If choice has both 'name' and 'value', create a Choice object
+                    if "value" in choice:
+                        choice_obj = questionary.Choice(
+                            title=choice["name"],
+                            value=choice["value"]
+                        )
+                        choices.append(choice_obj)
+                        # Map value to the Choice object for default matching
+                        choice_value_map[choice["value"]] = choice_obj
+                    else:
+                        # Old format: just use the name
+                        choices.append(choice["name"])
                 else:
                     choices.append(choice)
+            
+            # If default is specified and we have a value map, look up the Choice object
+            default = step.get("default")
+            if default and choice_value_map and default in choice_value_map:
+                default = choice_value_map[default]
 
             return questionary.select(
                 step["message"],
                 choices=choices,
-                default=step.get("default"),
-                instruction=step.get("instruction"),
+                default=default,
+                # Do not pass field help as inline instruction; we printed it above.
+                instruction=None,
                 style=self.style,
             )
 
         elif step["type"] == "text":
             # Build text question with validation
+            # Show field instruction as a separate line above the prompt (if provided)
+            if step.get("instruction"):
+                questionary.print(step["instruction"], style="italic")
             if "validate" in step:
                 validator_name = step["validate"]
                 validator_func = self.validators.get(validator_name)
                 return questionary.text(
                     step["message"],
                     default=step.get("default", ""),
-                    instruction=step.get("instruction"),
+                    # Do not pass field help as inline instruction; we printed it above.
+                    instruction=None,
                     validate=validator_func,
                     style=self.style,
                 )
@@ -430,20 +515,26 @@ class FlowEngine:
                 return questionary.text(
                     step["message"],
                     default=step.get("default", ""),
-                    instruction=step.get("instruction"),
+                    instruction=None,
                     style=self.style,
                 )
 
         elif step["type"] == "password":
+            # Show field instruction as a separate line above the prompt (if provided)
+            if step.get("instruction"):
+                questionary.print(step["instruction"], style="italic")
             return questionary.password(
-                step["message"], instruction=step.get("instruction"), style=self.style
+                step["message"], instruction=None, style=self.style
             )
 
         elif step["type"] == "confirm":
+            # Show field instruction as a separate line above the prompt (if provided)
+            if step.get("instruction"):
+                questionary.print(step["instruction"], style="italic")
             return questionary.confirm(
                 step["message"],
                 default=step.get("default", True),
-                instruction=step.get("instruction"),
+                instruction=None,
                 style=self.style,
             )
 

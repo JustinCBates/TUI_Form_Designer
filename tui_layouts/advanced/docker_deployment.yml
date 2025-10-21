@@ -1,4 +1,4 @@
-flow_id: "docker_deployment"
+layout_id: "docker_deployment"
 title: "Docker Deployment Configuration"
 description: "Configure Docker containers and deployment settings for your application"
 icon: "🐳"

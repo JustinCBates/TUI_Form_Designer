@@ -69,8 +69,8 @@ class TestFlowEngine:
         """Test validation of flow missing required fields."""
         invalid_flow = {}
         errors = flow_engine.validate_flow(invalid_flow)
-        assert len(errors) == 3  # Missing flow_id, title, steps
-        assert any("Missing required field: flow_id" in error for error in errors)
+        assert len(errors) == 3  # Missing layout_id, title, steps
+        assert any("Missing required field: layout_id" in error for error in errors)
         assert any("Missing required field: title" in error for error in errors)
         assert any("Missing required field: steps" in error for error in errors)
 

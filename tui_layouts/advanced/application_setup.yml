@@ -1,4 +1,4 @@
-flow_id: "application_setup"
+layout_id: "application_setup"
 title: "Application Configuration Wizard"
 description: "Set up your application with database, email, and deployment settings"
 icon: "⚙️"

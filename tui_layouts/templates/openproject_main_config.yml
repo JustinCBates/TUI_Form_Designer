@@ -1,4 +1,4 @@
-flow_id: "openproject_main_config"
+layout_id: "openproject_main_config"
 title: "OpenProject Main Configuration"
 description: "Complete OpenProject deployment configuration including database, networking, features, and deployment settings"
 icon: "🔧"
